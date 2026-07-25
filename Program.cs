@@ -22,7 +22,8 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.ExpireTimeSpan = TimeSpan.FromMinutes(15);
         
         options.Cookie.HttpOnly = true;
-        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        // options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
         options.Cookie.SameSite = SameSiteMode.Lax;
         options.Cookie.Name = "GmbhCms.Auth";
     });
