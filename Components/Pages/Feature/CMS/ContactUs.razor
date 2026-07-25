@@ -1,7 +1,6 @@
 @page "/cms/edit-contact"
 @layout MainLayout
-@inject NavigationManager Navigation
-@attribute [Authorize]
+@attribute [Authorize(Roles = "GmbHAdmin2026")]
 
 <div class="max-w-5xl mx-auto space-y-10">
     

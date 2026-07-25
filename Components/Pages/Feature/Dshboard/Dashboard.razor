@@ -1,9 +1,6 @@
 @page "/cms/dashboard"
-@using Microsoft.AspNetCore.Authorization
 @layout MainLayout
-@inject NavigationManager Navigation
-@inject AuthenticationStateProvider AuthStateProvider
-@attribute [Authorize]
+@attribute [Authorize(Roles = "GmbHAdmin2026")]
 
 <div class="max-w-6xl mx-auto space-y-8">
     

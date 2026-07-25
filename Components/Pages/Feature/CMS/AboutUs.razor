@@ -1,8 +1,6 @@
 @page "/cms/edit-about"
-@using Microsoft.AspNetCore.Authorization
 @layout MainLayout
-@inject NavigationManager Navigation
-@attribute [Authorize]
+@attribute [Authorize(Roles = "GmbHAdmin2026")]
 
 
 <div class="max-w-4xl mx-auto space-y-6 relative">

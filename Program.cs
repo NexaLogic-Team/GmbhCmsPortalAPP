@@ -49,39 +49,6 @@ app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
-// app.MapPost("/api/login", async (HttpContext context) =>
-// {
-//     var form = await context.Request.ReadFormAsync();
-//     var email = form["email"];
-//     var password = form["password"];
-//
-//     if (!string.IsNullOrEmpty(email))
-//     {
-//         var claims = new List<Claim>
-//         {
-//             new Claim(ClaimTypes.Name, email),
-//             new Claim(ClaimTypes.Email, email),
-//             new Claim(ClaimTypes.Role, "Admin")
-//         };
-//
-//         var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-//         var authProperties = new AuthenticationProperties
-//         {
-//             IsPersistent = true,
-//             AllowRefresh = true
-//         };
-//
-//         await context.SignInAsync(
-//             CookieAuthenticationDefaults.AuthenticationScheme, 
-//             new ClaimsPrincipal(claimsIdentity), 
-//             authProperties);
-//         
-//         return Results.Redirect("/cms/dashboard", true);
-//     }
-//     
-//     return Results.Redirect("/", true);
-// });
-
 app.MapPost("/api/login", async (HttpContext context) =>
 {
     var form = await context.Request.ReadFormAsync();
@@ -93,7 +60,6 @@ app.MapPost("/api/login", async (HttpContext context) =>
         return Results.Redirect("/?error=MissingCredentials", true);
     }
 
-    // TODO: Production တွင် Database မှ Admin အချက်အလက်များကို ယူ၍ စစ်ဆေးရပါမည်။
     bool isValidUser = (email == "gmbh@gmail.com" && password == "123@gmbh.com");
 
     if (isValidUser)
@@ -102,7 +68,7 @@ app.MapPost("/api/login", async (HttpContext context) =>
         {
             new Claim(ClaimTypes.Name, email!),
             new Claim(ClaimTypes.Email, email!),
-            new Claim(ClaimTypes.Role, "Admin")
+            new Claim(ClaimTypes.Role, "GmbHAdmin2026")
         };
 
         var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);

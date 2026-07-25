@@ -1,8 +1,6 @@
 @page "/cms/edit-services"
 @layout MainLayout
-@inject NavigationManager Navigation
-@inject IJSRuntime JSRuntime
-@attribute [Authorize]
+@attribute [Authorize(Roles = "GmbHAdmin2026")]
 
 
 <div class="max-w-5xl mx-auto space-y-6 relative">
