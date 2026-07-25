@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("GmbhCmsPortalApp")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e9c102233f2fb3b2b2d229960986487c0fee0b44")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+50861128d5ff12b8ea03688670e243c5afeee279")]
 [assembly: System.Reflection.AssemblyProductAttribute("GmbhCmsPortalApp")]
 [assembly: System.Reflection.AssemblyTitleAttribute("GmbhCmsPortalApp")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
