@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>aspnet-CmsTailwindTEST-dbaac13b-d45b-4c61-bf96-2afabe137765</UserSecretsId>
+    <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="Components\Common\Error.razor" />
+    <AdditionalFiles Include="Components\Common\NotFound.razor" />
+  </ItemGroup>
+
+</Project>

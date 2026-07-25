@@ -1,0 +1,320 @@
+@page "/cms/edit-leadership"
+@layout MainLayout
+@inject NavigationManager Navigation
+
+<div class="max-w-5xl mx-auto space-y-8">
+    
+    <!-- Page Header -->
+    <div class="flex items-center justify-between border-b border-[#E6E0DD] pb-6">
+        <div class="flex items-center space-x-4">
+            <!-- Back Button -->
+            <button @onclick="GoBack" 
+                    class="bg-white border border-[#D9D0CC] hover:bg-[#F5EFEE] text-[#5C1D24] p-2 rounded-md transition cursor-pointer flex items-center justify-center"
+                    title="Back">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+            </button>
+            <div>
+                <span class="text-xs uppercase text-[#5C1D24] font-medium block mb-1 tracking-normal">
+                    CMS Portal • Content Management
+                </span>
+                <h1 class="text-2xl font-semibold text-[#2D2424]">
+                    Manage Leadership Section
+                </h1>
+            </div>
+        </div>
+        
+        <!-- Add New Leader Button -->
+        <button @onclick="OpenCreateModal" 
+                class="bg-[#5C1D24] hover:bg-[#4A171D] text-[#FCFBFA] px-5 py-2.5 text-xs uppercase font-medium rounded-md transition cursor-pointer flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            Add New Leader
+        </button>
+    </div>
+
+    <!-- Section Header Settings -->
+    <div class="bg-[#FCFBFA] border border-[#E6E0DD] rounded-lg p-6 shadow-sm space-y-4">
+        <h3 class="text-sm font-semibold uppercase text-[#5C1D24] tracking-normal border-b border-[#E6E0DD] pb-2">
+            Section Header Settings
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-2 tracking-normal">
+                    Subtitle (e.g., BOARD OF DIRECTORS)
+                </label>
+                <input type="text" @bind="sectionSubtitle"
+                       class="w-full bg-white border border-[#D9D0CC] px-3.5 py-2.5 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
+            </div>
+            <div>
+                <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-2 tracking-normal">
+                    Main Title (e.g., Meet Our Leadership)
+                </label>
+                <input type="text" @bind="sectionTitle"
+                       class="w-full bg-white border border-[#D9D0CC] px-3.5 py-2.5 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leadership List Section -->
+    <div class="space-y-4">
+        <h3 class="text-sm font-semibold uppercase text-[#5C1D24] tracking-normal">
+            Leaders List (@leadersList.Count)
+        </h3>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            @foreach (var leader in leadersList)
+            {
+                <div class="bg-[#FCFBFA] border border-[#E6E0DD] rounded-lg overflow-hidden shadow-sm flex flex-col justify-between">
+                    <div>
+                        <div class="p-6 flex flex-col items-center text-center border-b border-[#E6E0DD] bg-white">
+                            <div class="w-24 h-24 rounded-full overflow-hidden mb-4 border border-[#E6E0DD]">
+                                <img src="@leader.ImageUrl" alt="@leader.Name" class="w-full h-full object-cover" />
+                            </div>
+                            <span class="text-[10px] uppercase font-semibold text-[#5C1D24] tracking-wider mb-1">@leader.Role</span>
+                            <h4 class="text-base font-bold text-[#2D2424]">@leader.Name</h4>
+                        </div>
+                        <div class="p-5 space-y-2">
+                            <p class="text-xs text-[#5C4D4D] line-clamp-4">@leader.Bio</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Card Actions (Edit / Delete) -->
+                    <div class="px-5 py-3 bg-white border-t border-[#E6E0DD] flex items-center justify-between">
+                        <button @onclick="() => OpenEditModal(leader)" 
+                                class="text-xs uppercase font-medium text-[#5C1D24] hover:underline flex items-center gap-1 cursor-pointer">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                            Edit
+                        </button>
+                        <button @onclick="() => PromptDelete(leader)" 
+                                class="text-xs uppercase font-medium text-red-700 hover:underline flex items-center gap-1 cursor-pointer">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+</div>
+
+<!-- Create / Edit Modal Form -->
+@if (isModalOpen)
+{
+    <div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="bg-[#FCFBFA] border border-[#E6E0DD] rounded-lg max-w-lg w-full p-6 shadow-xl space-y-6 max-h-[90vh] overflow-y-auto">
+            
+            <div class="flex items-center justify-between border-b border-[#E6E0DD] pb-4">
+                <h3 class="text-base font-semibold text-[#2D2424]">
+                    @(isEditMode ? "Edit Leader Profile" : "Add New Leader Profile")
+                </h3>
+                <button @onclick="CloseModal" class="text-[#735A5A] hover:text-[#2D2424]">
+                    ✕
+                </button>
+            </div>
+
+            <EditForm Model="activeLeader" OnValidSubmit="SaveLeader">
+                <div class="space-y-4">
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-1">Full Name</label>
+                            <InputText @bind-Value="activeLeader.Name" 
+                                       class="w-full bg-white border border-[#D9D0CC] px-3.5 py-2.5 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
+                        </div>
+                        <div>
+                            <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-1">Role / Position (e.g., FOUNDER)</label>
+                            <InputText @bind-Value="activeLeader.Role" 
+                                       class="w-full bg-white border border-[#D9D0CC] px-3.5 py-2.5 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-1">Biography / Description</label>
+                        <InputTextArea @bind-Value="activeLeader.Bio" rows="5"
+                                       class="w-full bg-white border border-[#D9D0CC] px-3.5 py-2.5 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-1">Profile Image</label>
+                        <InputFile OnChange="HandleFileSelection" class="w-full bg-white border border-[#D9D0CC] p-2 text-xs text-[#2D2424] rounded-md cursor-pointer file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-medium file:bg-[#5C1D24] file:text-[#FCFBFA]" />
+                        
+                        @if (!string.IsNullOrEmpty(activeLeader.ImageUrl))
+                        {
+                            <div class="mt-3 w-24 h-24 rounded-full overflow-hidden border border-[#E6E0DD] mx-auto">
+                                <img src="@activeLeader.ImageUrl" alt="Preview" class="w-full h-full object-cover" />
+                            </div>
+                        }
+                    </div>
+
+                    <div class="flex justify-end gap-3 pt-4 border-t border-[#E6E0DD]">
+                        <button type="button" @onclick="CloseModal" 
+                                class="bg-white border border-[#D9D0CC] text-[#735A5A] hover:bg-[#F5EFEE] px-4 py-2 text-xs uppercase font-medium rounded-md transition">
+                            Cancel
+                        </button>
+                        <button type="submit" 
+                                class="bg-[#5C1D24] hover:bg-[#4A171D] text-[#FCFBFA] px-5 py-2 text-xs uppercase font-medium rounded-md transition">
+                            Save Profile
+                        </button>
+                    </div>
+
+                </div>
+            </EditForm>
+
+        </div>
+    </div>
+}
+
+<!-- Delete Confirmation Modal -->
+@if (isDeleteModalOpen)
+{
+    <div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="bg-[#FCFBFA] border border-[#E6E0DD] rounded-lg max-w-sm w-full p-6 shadow-xl space-y-6 text-center">
+            
+            <div class="w-12 h-12 rounded-full bg-red-100 text-red-700 flex items-center justify-center mx-auto">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+            </div>
+
+            <div class="space-y-2">
+                <h3 class="text-base font-semibold text-[#2D2424]">Delete Leader Profile</h3>
+                <p class="text-xs text-[#5C4D4D]">
+                    Are you sure you want to delete <span class="font-semibold text-[#2D2424]">"@leaderToDelete?.Name"</span>? This action cannot be undone.
+                </p>
+            </div>
+
+            <div class="flex justify-center gap-3 pt-2">
+                <button type="button" @onclick="CloseDeleteModal" 
+                        class="flex-1 bg-white border border-[#D9D0CC] text-[#735A5A] hover:bg-[#F5EFEE] px-4 py-2 text-xs uppercase font-medium rounded-md transition">
+                    Cancel
+                </button>
+                <button type="button" @onclick="ConfirmDelete" 
+                        class="flex-1 bg-red-700 hover:bg-red-800 text-white px-4 py-2 text-xs uppercase font-medium rounded-md transition">
+                    Delete
+                </button>
+            </div>
+
+        </div>
+    </div>
+}
+
+@code {
+    private string sectionSubtitle = "BOARD OF DIRECTORS";
+    private string sectionTitle = "Meet Our Leadership";
+
+    private List<LeaderModel> leadersList = new()
+    {
+        new LeaderModel { Id = 1, Name = "Win Htein Lin", Role = "FOUNDER", Bio = "Having worked as an Urban Development and Transport Consultant for the World Bank, I bring multiple years of professional experience in infrastructure and logistics projects.", ImageUrl = "/images/win-htein.jpg" },
+        new LeaderModel { Id = 2, Name = "Nyi Win Lwin", Role = "FOUNDER", Bio = "As a founder, I bring over a decade of international expertise spanning luxury hospitality and elite cocktail lounges, defined by an enduring passion for mixology.", ImageUrl = "/images/nyi-win.jpg" },
+        new LeaderModel { Id = 3, Name = "Win Htet Aung", Role = "CO-FOUNDER", Bio = "With over eight years of experience at Goethe-Institut Myanmar as an Event Technician and IT Assistant, I developed expertise in IT support and management.", ImageUrl = "/images/win-htet.jpg" }
+    };
+
+    private bool isModalOpen = false;
+    private bool isEditMode = false;
+    private LeaderModel activeLeader = new();
+
+    private bool isDeleteModalOpen = false;
+    private LeaderModel? leaderToDelete = null;
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/cms/dashboard");
+    }
+
+    private void OpenCreateModal()
+    {
+        isEditMode = false;
+        activeLeader = new LeaderModel();
+        isModalOpen = true;
+    }
+
+    private void OpenEditModal(LeaderModel leader)
+    {
+        isEditMode = true;
+        activeLeader = new LeaderModel
+        {
+            Id = leader.Id,
+            Name = leader.Name,
+            Role = leader.Role,
+            Bio = leader.Bio,
+            ImageUrl = leader.ImageUrl
+        };
+        isModalOpen = true;
+    }
+
+    private void CloseModal()
+    {
+        isModalOpen = false;
+    }
+
+    private async Task HandleFileSelection(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file != null)
+        {
+            var format = file.ContentType;
+            var buffer = new byte[file.Size];
+            await file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024).ReadAsync(buffer);
+            activeLeader.ImageUrl = $"data:{format};base64,{Convert.ToBase64String(buffer)}";
+        }
+    }
+
+    private void SaveLeader()
+    {
+        if (isEditMode)
+        {
+            var existing = leadersList.FirstOrDefault(l => l.Id == activeLeader.Id);
+            if (existing != null)
+            {
+                existing.Name = activeLeader.Name;
+                existing.Role = activeLeader.Role;
+                existing.Bio = activeLeader.Bio;
+                existing.ImageUrl = activeLeader.ImageUrl;
+            }
+        }
+        else
+        {
+            activeLeader.Id = leadersList.Any() ? leadersList.Max(l => l.Id) + 1 : 1;
+            leadersList.Add(activeLeader);
+        }
+        isModalOpen = false;
+    }
+
+    private void PromptDelete(LeaderModel leader)
+    {
+        leaderToDelete = leader;
+        isDeleteModalOpen = true;
+    }
+
+    private void CloseDeleteModal()
+    {
+        isDeleteModalOpen = false;
+        leaderToDelete = null;
+    }
+
+    private void ConfirmDelete()
+    {
+        if (leaderToDelete != null)
+        {
+            leadersList.Remove(leaderToDelete);
+        }
+        CloseDeleteModal();
+    }
+
+    public class LeaderModel
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = "";
+        public string Role { get; set; } = "";
+        public string Bio { get; set; } = "";
+        public string ImageUrl { get; set; } = "";
+    }
+}

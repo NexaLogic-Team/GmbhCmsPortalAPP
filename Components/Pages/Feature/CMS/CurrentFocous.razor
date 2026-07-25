@@ -1,0 +1,444 @@
+@page "/cms/edit-current-focus"
+@layout MainLayout
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<div class="max-w-5xl mx-auto space-y-6 relative">
+    
+    <!-- Global Notification Banner -->
+    @if (showNotification)
+    {
+        <div class="transition-all duration-300 flex items-center justify-between p-4 rounded-md border text-xs font-medium shadow-sm @(notificationType == "success" ? "bg-[#5C1D24]/10 border-[#5C1D24]/30 text-[#5C1D24]" : "bg-red-50 border-red-200 text-red-700")">
+            <div class="flex items-center gap-2">
+                @if (notificationType == "success")
+                {
+                    <svg class="w-4 h-4 text-[#5C1D24]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+                }
+                else
+                {
+                    <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
+                }
+                <span>@notificationMessage</span>
+            </div>
+            <button @onclick="() => showNotification = false" class="text-xs uppercase font-bold opacity-70 hover:opacity-100 cursor-pointer">
+                ✕
+            </button>
+        </div>
+    }
+
+    <!-- Page Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#E6E0DD] pb-6 gap-4">
+        <div class="flex items-center space-x-4">
+            <button @onclick="GoBack" 
+                    class="bg-white border border-[#D9D0CC] hover:bg-[#F5EFEE] text-[#5C1D24] p-2 rounded-md transition cursor-pointer flex items-center justify-center"
+                    title="Back">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+            </button>
+            <div>
+                <span class="text-xs uppercase text-[#5C1D24] font-medium block mb-1 tracking-normal">
+                    CMS Portal • Content Management
+                </span>
+                <h1 class="text-2xl font-semibold text-[#2D2424]">
+                    Manage Current Focus Section
+                </h1>
+            </div>
+        </div>
+        
+        <button @onclick="OpenCreateModal" 
+                class="bg-[#5C1D24] hover:bg-[#4A171D] text-[#FCFBFA] px-5 py-2.5 text-xs uppercase font-medium rounded-md transition cursor-pointer flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            Add New Focus Item
+        </button>
+    </div>
+
+    <!-- Section Header Settings -->
+    <div class="bg-[#FCFBFA] border border-[#E6E0DD] rounded-lg p-6 shadow-sm relative overflow-hidden space-y-4">
+        @if (isHeaderLoading)
+        {
+            <div class="absolute inset-0 bg-[#FCFBFA]/90 backdrop-blur-[2px] z-30 flex flex-col items-center justify-center space-y-3">
+                <div class="w-8 h-8 border-3 border-[#E6E0DD] border-t-[#5C1D24] rounded-full animate-spin"></div>
+                <span class="text-xs font-medium uppercase text-[#5C1D24] tracking-wider">
+                    Updating header content...
+                </span>
+            </div>
+        }
+
+        <div class="flex items-center justify-between border-b border-[#E6E0DD] pb-3">
+            <h3 class="text-sm font-semibold uppercase text-[#5C1D24] tracking-normal">
+                Section Header Settings
+            </h3>
+            <button @onclick="SaveHeaderSettings" 
+                    disabled="@isHeaderLoading"
+                    class="bg-[#5C1D24] hover:bg-[#4A171D] text-[#FCFBFA] px-4 py-2 text-xs uppercase font-medium rounded-md transition cursor-pointer disabled:opacity-50">
+                Save Header
+            </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+            <div>
+                <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-2 tracking-normal">
+                    Subtitle (e.g., CURRENT FOCUS)
+                </label>
+                <input type="text" @bind="sectionSubtitle"
+                       class="w-full bg-white border border-[#D9D0CC] px-3.5 py-2.5 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
+            </div>
+            <div>
+                <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-2 tracking-normal">
+                    Main Title (e.g., What We're Doing)
+                </label>
+                <input type="text" @bind="sectionTitle"
+                       class="w-full bg-white border border-[#D9D0CC] px-3.5 py-2.5 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
+            </div>
+        </div>
+    </div>
+
+    <!-- Focus Items List Section -->
+    <div class="space-y-4 pt-2">
+        <h3 class="text-sm font-semibold uppercase text-[#5C1D24] tracking-normal">
+            Focus Items List (@focusList.Count)
+        </h3>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            @foreach (var item in focusList)
+            {
+                <div class="bg-[#FCFBFA] border border-[#E6E0DD] rounded-lg overflow-hidden shadow-sm flex flex-col justify-between">
+                    <div>
+                        <div class="h-40 bg-black/5 relative">
+                            <img src="@item.ImageUrl" alt="@item.Title" class="w-full h-full object-cover" />
+                        </div>
+                        <div class="p-5 space-y-2">
+                            <h4 class="text-base font-semibold text-[#2D2424]">@item.Title</h4>
+                            <p class="text-xs text-[#5C4D4D] line-clamp-3">@item.Description</p>
+                        </div>
+                    </div>
+                    
+                    <div class="px-5 py-3 bg-white border-t border-[#E6E0DD] flex items-center justify-between">
+                        <button @onclick="() => OpenEditModal(item)" 
+                                class="text-xs uppercase font-medium text-[#5C1D24] hover:underline flex items-center gap-1 cursor-pointer">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                            Edit
+                        </button>
+                        <button @onclick="() => PromptDelete(item)" 
+                                class="text-xs uppercase font-medium text-red-700 hover:underline flex items-center gap-1 cursor-pointer">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+</div>
+
+<!-- Create / Edit Modal Form -->
+@if (isModalOpen)
+{
+    <div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="bg-[#FCFBFA] border border-[#E6E0DD] rounded-lg max-w-lg w-full p-6 shadow-xl space-y-6 max-h-[90vh] overflow-y-auto relative">
+            @if (isModalLoading)
+            {
+                <div class="absolute inset-0 bg-[#FCFBFA]/90 backdrop-blur-[2px] z-50 flex flex-col items-center justify-center space-y-3 rounded-lg">
+                    <div class="w-8 h-8 border-3 border-[#E6E0DD] border-t-[#5C1D24] rounded-full animate-spin"></div>
+                    <span class="text-xs font-medium uppercase text-[#5C1D24] tracking-wider">
+                        Saving focus item...
+                    </span>
+                </div>
+            }
+
+            <div class="flex items-center justify-between border-b border-[#E6E0DD] pb-4">
+                <h3 class="text-base font-semibold text-[#2D2424]">
+                    @(isEditMode ? "Edit Focus Item" : "Add New Focus Item")
+                </h3>
+                <button @onclick="CloseModal" class="text-[#735A5A] hover:text-[#2D2424] cursor-pointer">
+                    ✕
+                </button>
+            </div>
+
+            <EditForm Model="activeItem" OnValidSubmit="SaveItem">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-1">Item Title</label>
+                        <InputText @bind-Value="activeItem.Title" 
+                                   class="w-full bg-white border border-[#D9D0CC] px-3.5 py-2.5 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-1">Description</label>
+                        <InputTextArea @bind-Value="activeItem.Description" rows="4"
+                                       class="w-full bg-white border border-[#D9D0CC] px-3.5 py-2.5 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-1">Item Image</label>
+                        <InputFile OnChange="HandleFileSelection" class="w-full bg-white border border-[#D9D0CC] p-2 text-xs text-[#2D2424] rounded-md cursor-pointer file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-medium file:bg-[#5C1D24] file:text-[#FCFBFA]" />
+                        
+                        @if (!string.IsNullOrEmpty(activeItem.ImageUrl))
+                        {
+                            <div class="mt-3 h-32 rounded-md overflow-hidden border border-[#E6E0DD]">
+                                <img src="@activeItem.ImageUrl" alt="Preview" class="w-full h-full object-cover" />
+                            </div>
+                        }
+                    </div>
+
+                    <div class="flex justify-end gap-3 pt-4 border-t border-[#E6E0DD]">
+                        <button type="button" @onclick="CloseModal" 
+                                class="bg-white border border-[#D9D0CC] text-[#735A5A] hover:bg-[#F5EFEE] px-4 py-2 text-xs uppercase font-medium rounded-md transition cursor-pointer">
+                            Cancel
+                        </button>
+                        <button type="submit" disabled="@isModalLoading"
+                                class="bg-[#5C1D24] hover:bg-[#4A171D] text-[#FCFBFA] px-5 py-2 text-xs uppercase font-medium rounded-md transition cursor-pointer disabled:opacity-50">
+                            Save Item
+                        </button>
+                    </div>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+}
+
+<!-- Delete Confirmation Modal -->
+@if (isDeleteModalOpen)
+{
+    <div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="bg-[#FCFBFA] border border-[#E6E0DD] rounded-lg max-w-sm w-full p-6 shadow-xl space-y-6 text-center relative">
+            @if (isDeleteLoading)
+            {
+                <div class="absolute inset-0 bg-[#FCFBFA]/90 backdrop-blur-[2px] z-50 flex flex-col items-center justify-center space-y-3 rounded-lg">
+                    <div class="w-8 h-8 border-3 border-[#E6E0DD] border-t-red-700 rounded-full animate-spin"></div>
+                    <span class="text-xs font-medium uppercase text-red-700 tracking-wider">
+                        Deleting focus item...
+                    </span>
+                </div>
+            }
+
+            <div class="w-12 h-12 rounded-full bg-red-100 text-red-700 flex items-center justify-center mx-auto">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+            </div>
+
+            <div class="space-y-2">
+                <h3 class="text-base font-semibold text-[#2D2424]">Delete Focus Item</h3>
+                <p class="text-xs text-[#5C4D4D]">
+                    Are you sure you want to delete <span class="font-semibold text-[#2D2424]">"@itemToDelete?.Title"</span>? This action cannot be undone.
+                </p>
+            </div>
+
+            <div class="flex justify-center gap-3 pt-2">
+                <button type="button" @onclick="CloseDeleteModal" disabled="@isDeleteLoading"
+                        class="flex-1 bg-white border border-[#D9D0CC] text-[#735A5A] hover:bg-[#F5EFEE] px-4 py-2 text-xs uppercase font-medium rounded-md transition cursor-pointer disabled:opacity-50">
+                    Cancel
+                </button>
+                <button type="button" @onclick="ConfirmDelete" disabled="@isDeleteLoading"
+                        class="flex-1 bg-red-700 hover:bg-red-800 text-white px-4 py-2 text-xs uppercase font-medium rounded-md transition cursor-pointer disabled:opacity-50">
+                    Delete
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool showNotification = false;
+    private string notificationMessage = "";
+    private string notificationType = "success";
+
+    private bool isHeaderLoading = false;
+    private string sectionSubtitle = "CURRENT FOCUS";
+    private string sectionTitle = "What We're Doing";
+
+    private List<FocusItemModel> focusList = new()
+    {
+        new FocusItemModel { Id = 1, Title = "Creating Whisky Bar, Cocktails and Event Experiences", Description = "We focus on developing unique whisky bar concepts and memorable event experiences...", ImageUrl = "/images/focus-1.jpg" },
+        new FocusItemModel { Id = 2, Title = "Curating Private Dining and Social Events", Description = "We shape private dining evenings and social gatherings...", ImageUrl = "/images/focus-2.jpg" },
+        new FocusItemModel { Id = 3, Title = "Supporting Hospitality Brand Launches", Description = "We help hospitality brands develop launch concepts...", ImageUrl = "/images/focus-3.jpg" },
+        new FocusItemModel { Id = 4, Title = "Creating Cultural Exchange Programs", Description = "We help organizations design events and programs...", ImageUrl = "/images/focus-4.jpg" }
+    };
+
+    private bool isModalOpen = false;
+    private bool isModalLoading = false;
+    private bool isEditMode = false;
+    private FocusItemModel activeItem = new();
+
+    private bool isDeleteModalOpen = false;
+    private bool isDeleteLoading = false;
+    private FocusItemModel? itemToDelete = null;
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/cms/dashboard");
+    }
+
+    private async Task ShowAlert(string message, string type = "success")
+    {
+        notificationMessage = message;
+        notificationType = type;
+        showNotification = true;
+        
+        // Scroll to top automatically to make response message visible immediately
+        await JSRuntime.InvokeVoidAsync("window.scrollTo", new { top = 0, behavior = "smooth" });
+        StateHasChanged();
+
+        _ = Task.Run(async () =>
+        {
+            await Task.Delay(4000);
+            showNotification = false;
+            await InvokeAsync(StateHasChanged);
+        });
+    }
+
+    private async Task SaveHeaderSettings()
+    {
+        isHeaderLoading = true;
+        showNotification = false;
+        StateHasChanged();
+
+        try
+        {
+            await Task.Delay(1000);
+            await ShowAlert("Section header settings updated successfully!");
+        }
+        catch (Exception)
+        {
+            await ShowAlert("Failed to update section header.", "error");
+        }
+        finally
+        {
+            isHeaderLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void OpenCreateModal()
+    {
+        isEditMode = false;
+        activeItem = new FocusItemModel();
+        isModalOpen = true;
+    }
+
+    private void OpenEditModal(FocusItemModel item)
+    {
+        isEditMode = true;
+        activeItem = new FocusItemModel
+        {
+            Id = item.Id,
+            Title = item.Title,
+            Description = item.Description,
+            ImageUrl = item.ImageUrl
+        };
+        isModalOpen = true;
+    }
+
+    private void CloseModal()
+    {
+        isModalOpen = false;
+    }
+
+    private async Task HandleFileSelection(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file != null)
+        {
+            var format = file.ContentType;
+            var buffer = new byte[file.Size];
+            await file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024).ReadAsync(buffer);
+            activeItem.ImageUrl = $"data:{format};base64,{Convert.ToBase64String(buffer)}";
+        }
+    }
+
+    private async Task SaveItem()
+    {
+        isModalLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            await Task.Delay(1000);
+
+            if (isEditMode)
+            {
+                var existing = focusList.FirstOrDefault(i => i.Id == activeItem.Id);
+                if (existing != null)
+                {
+                    existing.Title = activeItem.Title;
+                    existing.Description = activeItem.Description;
+                    existing.ImageUrl = activeItem.ImageUrl;
+                }
+                isModalOpen = false;
+                await ShowAlert("Focus item updated successfully!");
+            }
+            else
+            {
+                activeItem.Id = focusList.Any() ? focusList.Max(i => i.Id) + 1 : 1;
+                focusList.Add(activeItem);
+                isModalOpen = false;
+                await ShowAlert("New focus item added successfully!");
+            }
+        }
+        catch (Exception)
+        {
+            isModalOpen = false;
+            await ShowAlert("Failed to save focus item. Please try again.", "error");
+        }
+        finally
+        {
+            isModalLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void PromptDelete(FocusItemModel item)
+    {
+        itemToDelete = item;
+        isDeleteModalOpen = true;
+    }
+
+    private void CloseDeleteModal()
+    {
+        isDeleteModalOpen = false;
+        itemToDelete = null;
+    }
+
+    private async Task ConfirmDelete()
+    {
+        if (itemToDelete == null) return;
+
+        isDeleteLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            await Task.Delay(1000);
+            focusList.Remove(itemToDelete);
+            CloseDeleteModal();
+            await ShowAlert("Focus item deleted successfully!");
+        }
+        catch (Exception)
+        {
+            CloseDeleteModal();
+            await ShowAlert("Failed to delete focus item.", "error");
+        }
+        finally
+        {
+            isDeleteLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    public class FocusItemModel
+    {
+        public int Id { get; set; }
+        public string Title { get; set; } = "";
+        public string Description { get; set; } = "";
+        public string ImageUrl { get; set; } = "";
+    }
+}

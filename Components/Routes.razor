@@ -1,0 +1,26 @@
+﻿<CascadingAuthenticationState>
+    <Router AppAssembly="@typeof(Program).Assembly">
+        <Found Context="routeData">
+            <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(Layout.MainLayout)">
+                <NotAuthorized>
+                    @if (!context.User.Identity.IsAuthenticated)
+                    {
+                        Navigation.NavigateTo("/", true);
+                    }
+                    else
+                    {
+                        <p>Access Denied</p>
+                    }
+                </NotAuthorized>
+            </AuthorizeRouteView>
+            <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+        </Found>
+        <NotFound>
+            @{
+                Navigation.NavigateTo("/", true);
+            }
+        </NotFound>
+    </Router>
+</CascadingAuthenticationState>
+
+@inject NavigationManager Navigation

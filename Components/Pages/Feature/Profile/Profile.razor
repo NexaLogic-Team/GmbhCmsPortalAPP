@@ -1,0 +1,149 @@
+@page "/cms/profile"
+@layout MainLayout
+@inject NavigationManager Navigation
+
+<div class="max-w-4xl mx-auto space-y-8">
+
+    <!-- Page Header -->
+    <div class="flex items-center justify-between border-b border-[#E6E0DD] pb-6">
+        <div class="flex items-center space-x-4">
+            <!-- Back Button -->
+            <button @onclick="GoBack"
+                    class="bg-white border border-[#D9D0CC] hover:bg-[#F5EFEE] text-[#5C1D24] p-2 rounded-md transition cursor-pointer flex items-center justify-center"
+                    title="Back">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                     stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                </svg>
+            </button>
+            <div>
+                <span class="text-xs uppercase text-[#5C1D24] font-medium block mb-1 tracking-normal">
+                    CMS Portal • Account Settings
+                </span>
+                <h1 class="text-2xl font-semibold text-[#2D2424]">
+                    Profile
+                </h1>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success / Info Message (optional) -->
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <div class="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-md text-sm">
+            @successMessage
+        </div>
+    }
+
+    <!-- Profile Overview & Avatar Card -->
+    <div
+        class="bg-[#FCFBFA] border border-[#E6E0DD] rounded-lg p-8 shadow-sm flex flex-col md:flex-row items-center gap-6">
+        <div class="relative">
+            <img src="@profileModel.AvatarUrl" alt="Admin Avatar"
+                 class="w-24 h-24 rounded-full object-cover border-2 border-[#5C1D24]"/>
+            <!-- Disabled Avatar Upload Label -->
+            <div
+                class="absolute bottom-0 right-0 bg-gray-400 text-white p-2 rounded-full cursor-not-allowed shadow-md opacity-60"
+                title="Disabled">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                     stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+            </div>
+        </div>
+        <div class="text-center md:text-left space-y-1">
+            <h2 class="text-xl font-semibold text-[#2D2424]">@profileModel.FullName</h2>
+            <p class="text-sm text-[#5C4D4D]">@profileModel.Email</p>
+            <span
+                class="inline-block bg-[#F5EFEE] text-[#5C1D24] text-[11px] uppercase font-medium px-2.5 py-1 rounded">
+                @profileModel.Role
+            </span>
+        </div>
+    </div>
+
+    <!-- Edit Profile Form Card -->
+    <div class="bg-[#FCFBFA] border border-[#E6E0DD] rounded-lg p-8 shadow-sm">
+        <EditForm Model="profileModel">
+            <fieldset disabled class="space-y-6">
+
+                <h3 class="text-sm font-semibold uppercase text-[#5C1D24] tracking-normal border-b border-[#E6E0DD] pb-2">
+                    Personal Information
+                </h3>
+
+                <!-- Full Name & Username -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-2 tracking-normal">
+                            Full Name
+                        </label>
+                        <InputText @bind-Value="profileModel.FullName"
+                                   class="w-full bg-gray-100 border border-[#D9D0CC] px-3.5 py-3 text-sm text-gray-600 focus:outline-none rounded-md cursor-not-allowed"/>
+                    </div>
+                    <div>
+                        <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-2 tracking-normal">
+                            Username
+                        </label>
+                        <InputText @bind-Value="profileModel.Username"
+                                   class="w-full bg-gray-100 border border-[#D9D0CC] px-3.5 py-3 text-sm text-gray-600 focus:outline-none rounded-md cursor-not-allowed"/>
+                    </div>
+                </div>
+
+                <!-- Email & Phone -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-2 tracking-normal">
+                            Email Address
+                        </label>
+                        <InputText @bind-Value="profileModel.Email"
+                                   class="w-full bg-gray-100 border border-[#D9D0CC] px-3.5 py-3 text-sm text-gray-600 focus:outline-none rounded-md cursor-not-allowed"/>
+                    </div>
+                </div>
+            </fieldset>
+        </EditForm>
+    </div>
+
+</div>
+
+@code {
+
+    private AdminProfileModel profileModel = new()
+    {
+        FullName = "Win Htet Aung",
+        Username = "winhtet@german",
+        Email = "winhtet@irrawaddy-gmbh.de",
+        Phone = "+49 123 4567890",
+        Role = "Super Administrator",
+        AvatarUrl = "/Logo/win_htet_aung.png"
+    };
+
+    private string successMessage = "";
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/cms/dashboard");
+    }
+
+    private async Task HandleAvatarSelection(InputFileChangeEventArgs e)
+    {
+        // Disabled logic placeholder
+        await Task.CompletedTask;
+    }
+
+    public class AdminProfileModel
+    {
+        public string FullName { get; set; } = "";
+        public string Username { get; set; } = "";
+        public string Email { get; set; } = "";
+        public string Phone { get; set; } = "";
+        public string Role { get; set; } = "";
+        public string AvatarUrl { get; set; } = "";
+        public string CurrentPassword { get; set; } = "";
+        public string NewPassword { get; set; } = "";
+        public string ConfirmPassword { get; set; } = "";
+    }
+
+}

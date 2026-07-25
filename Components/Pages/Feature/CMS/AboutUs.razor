@@ -1,0 +1,323 @@
+@page "/cms/edit-about"
+@layout MainLayout
+@inject NavigationManager Navigation
+
+<div class="max-w-4xl mx-auto space-y-6 relative">
+
+    <!-- Success / Error Notification Banner -->
+    @if (showNotification)
+    {
+        <div class="transition-all duration-300 flex items-center justify-between p-4 rounded-md border text-xs font-medium shadow-sm @(notificationType == "success" ? "bg-[#5C1D24]/10 border-[#5C1D24]/30 text-[#5C1D24]" : "bg-red-50 border-red-200 text-red-700")">
+            <div class="flex items-center gap-2">
+                @if (notificationType == "success")
+                {
+                    <svg class="w-4 h-4 text-[#5C1D24]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+                }
+                else
+                {
+                    <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
+                }
+                <span>@notificationMessage</span>
+            </div>
+            <button @onclick="() => showNotification = false" class="text-xs uppercase font-bold opacity-70 hover:opacity-100 cursor-pointer">
+                ✕
+            </button>
+        </div>
+    }
+
+    <!-- Page Header & Language Switcher -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#E6E0DD] pb-6 gap-4">
+        <div class="flex items-center space-x-4">
+            <!-- Back Button -->
+            <button @onclick="GoBack"
+                    class="bg-white border border-[#D9D0CC] hover:bg-[#F5EFEE] text-[#5C1D24] p-2 rounded-md transition cursor-pointer flex items-center justify-center"
+                    title="Back">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                     stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                </svg>
+            </button>
+            <div>
+                <span class="text-xs uppercase text-[#5C1D24] font-medium block mb-1 tracking-normal">
+                    CMS Portal • Content Management
+                </span>
+                <h1 class="text-2xl font-semibold text-[#2D2424]">
+                    Edit About Us Section
+                </h1>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-4">
+            <!-- Language Selector Tabs with Completion Status Indicator -->
+            <div class="inline-flex bg-[#E6E0DD]/60 p-1 rounded-md gap-1">
+                <button type="button" 
+                        @onclick='() => currentLang = "en"'
+                        class="px-3 py-1.5 text-xs font-medium rounded transition flex items-center gap-1.5 @(currentLang == "en" ? "bg-[#5C1D24] text-[#FCFBFA]" : "text-[#735A5A] hover:text-[#2D2424]")">
+                    🇬🇧 English
+                    @if (!string.IsNullOrWhiteSpace(aboutModel.MainTitleEn))
+                    {
+                        <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                    }
+                </button>
+                <button type="button" 
+                        @onclick='() => currentLang = "de"'
+                        class="px-3 py-1.5 text-xs font-medium rounded transition flex items-center gap-1.5 @(currentLang == "de" ? "bg-[#5C1D24] text-[#FCFBFA]" : "text-[#735A5A] hover:text-[#2D2424]")">
+                    🇩🇪 German
+                    @if (!string.IsNullOrWhiteSpace(aboutModel.MainTitleDe))
+                    {
+                        <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                    }
+                </button>
+            </div>
+
+            <button @onclick="HandleSave" 
+                    disabled="@isLoading"
+                    class="bg-[#5C1D24] hover:bg-[#4A171D] text-[#FCFBFA] px-6 py-2.5 text-xs uppercase font-medium rounded-md transition cursor-pointer disabled:opacity-50">
+                @if (isLoading) { <span>Saving...</span> } else { <span>Save Changes</span> }
+            </button>
+        </div>
+    </div>
+
+    <!-- Edit Form Card Container -->
+    <div class="bg-[#FCFBFA] border border-[#E6E0DD] rounded-lg p-8 shadow-sm relative overflow-hidden">
+        
+        <!-- Loading Overlay -->
+        @if (isLoading)
+        {
+            <div class="absolute inset-0 bg-[#FCFBFA]/90 backdrop-blur-[2px] z-50 flex flex-col items-center justify-center space-y-3">
+                <div class="w-8 h-8 border-3 border-[#E6E0DD] border-t-[#5C1D24] rounded-full animate-spin"></div>
+                <span class="text-xs font-medium uppercase text-[#5C1D24] tracking-wider">
+                    Updating content...
+                </span>
+            </div>
+        }
+
+        <EditForm Model="aboutModel" OnValidSubmit="HandleSave">
+            <div class="space-y-6">
+
+                <!-- Reminder Banner -->
+                <div class="bg-[#5C1D24]/10 border border-[#5C1D24]/20 p-3 rounded-md text-xs text-[#5C1D24] font-medium flex justify-between items-center">
+                    <span>You are editing: <strong class="uppercase">@(currentLang == "en" ? "English (EN)" : "German (DE)")</strong>. Remember to check both tabs before saving!</span>
+                    <button type="button" @onclick="SwitchLanguage" class="underline font-bold hover:opacity-80 cursor-pointer">
+                        Switch to @(currentLang == "en" ? "German 🇩🇪" : "English 🇬🇧") ➔
+                    </button>
+                </div>
+
+                <!-- Section Subtitle / Tag -->
+                <div>
+                    <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-2 tracking-normal">
+                        Section Subtitle (@(currentLang.ToUpper())) (e.g., OUR HERITAGE)
+                    </label>
+                    @if (currentLang == "en")
+                    {
+                        <InputText @bind-Value="aboutModel.SubTitleEn"
+                                   class="w-full bg-white border border-[#D9D0CC] px-3.5 py-3 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
+                    }
+                    else
+                    {
+                        <InputText @bind-Value="aboutModel.SubTitleDe"
+                                   class="w-full bg-white border border-[#D9D0CC] px-3.5 py-3 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
+                    }
+                </div>
+
+                <!-- Main Heading -->
+                <div>
+                    <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-2 tracking-normal">
+                        Main Heading (Title) (@(currentLang.ToUpper()))
+                    </label>
+                    @if (currentLang == "en")
+                    {
+                        <InputText @bind-Value="aboutModel.MainTitleEn"
+                                   class="w-full bg-white border border-[#D9D0CC] px-3.5 py-3 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
+                    }
+                    else
+                    {
+                        <InputText @bind-Value="aboutModel.MainTitleDe"
+                                   class="w-full bg-white border border-[#D9D0CC] px-3.5 py-3 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
+                    }
+                </div>
+
+                <!-- Highlight Paragraph (Paragraph 1) -->
+                <div>
+                    <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-2 tracking-normal">
+                        Highlight Paragraph (Italic / Styled) (@(currentLang.ToUpper()))
+                    </label>
+                    @if (currentLang == "en")
+                    {
+                        <InputTextArea @bind-Value="aboutModel.Paragraph1En" rows="3"
+                                       class="w-full bg-white border border-[#D9D0CC] px-3.5 py-3 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
+                    }
+                    else
+                    {
+                        <InputTextArea @bind-Value="aboutModel.Paragraph1De" rows="3"
+                                       class="w-full bg-white border border-[#D9D0CC] px-3.5 py-3 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
+                    }
+                </div>
+
+                <!-- Description Paragraph 2 -->
+                <div>
+                    <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-2 tracking-normal">
+                        Description Paragraph 2 (@(currentLang.ToUpper()))
+                    </label>
+                    @if (currentLang == "en")
+                    {
+                        <InputTextArea @bind-Value="aboutModel.Paragraph2En" rows="3"
+                                       class="w-full bg-white border border-[#D9D0CC] px-3.5 py-3 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
+                    }
+                    else
+                    {
+                        <InputTextArea @bind-Value="aboutModel.Paragraph2De" rows="3"
+                                       class="w-full bg-white border border-[#D9D0CC] px-3.5 py-3 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
+                    }
+                </div>
+
+                <!-- Description Paragraph 3 -->
+                <div>
+                    <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-2 tracking-normal">
+                        Description Paragraph 3 (@(currentLang.ToUpper()))
+                    </label>
+                    @if (currentLang == "en")
+                    {
+                        <InputTextArea @bind-Value="aboutModel.Paragraph3En" rows="3"
+                                       class="w-full bg-white border border-[#D9D0CC] px-3.5 py-3 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
+                    }
+                    else
+                    {
+                        <InputTextArea @bind-Value="aboutModel.Paragraph3De" rows="3"
+                                       class="w-full bg-white border border-[#D9D0CC] px-3.5 py-3 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
+                    }
+                </div>
+
+                <!-- Description Paragraph 4 -->
+                <div>
+                    <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-2 tracking-normal">
+                        Description Paragraph 4 (@(currentLang.ToUpper()))
+                    </label>
+                    @if (currentLang == "en")
+                    {
+                        <InputTextArea @bind-Value="aboutModel.Paragraph4En" rows="3"
+                                       class="w-full bg-white border border-[#D9D0CC] px-3.5 py-3 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
+                    }
+                    else
+                    {
+                        <InputTextArea @bind-Value="aboutModel.Paragraph4De" rows="3"
+                                       class="w-full bg-white border border-[#D9D0CC] px-3.5 py-3 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
+                    }
+                </div>
+
+                <!-- About Image Upload & Preview Section -->
+                <div class="pt-4 border-t border-[#E6E0DD]">
+                    <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-2 tracking-normal">
+                        About Section Image (Logo / Graphic)
+                    </label>
+                    <!-- Image upload components can go here -->
+                </div>
+
+            </div>
+        </EditForm>
+    </div>
+
+</div>
+
+@code {
+    private string currentLang = "en";
+    private bool isLoading = false;
+    private bool showNotification = false;
+    private string notificationMessage = "";
+    private string notificationType = "success";
+
+    private AboutSectionModel aboutModel = new()
+    {
+        SubTitleEn = "OUR HERITAGE",
+        SubTitleDe = "UNSERE TRADITION",
+        MainTitleEn = "About Us",
+        MainTitleDe = "Über uns",
+        Paragraph1En = "Irrawaddy GmbH is a Munich-based company dedicated to creating business opportunities between Germany and Myanmar.",
+        Paragraph1De = "Die Irrawaddy GmbH ist ein in München ansässiges Unternehmen...",
+        Paragraph2En = "We offer personalized and tailor-made consulting services to businesses, entrepreneurs, students, and organizations...",
+        Paragraph2De = "Wir bieten maßgeschneiderte Beratungsdienstleistungen für Unternehmen, Unternehmer, Studenten...",
+        Paragraph3En = "The company also focuses on strategic investments in the restaurant and hospitality industry...",
+        Paragraph3De = "Das Unternehmen konzentriert sich auch auf strategische Investitionen...",
+        Paragraph4En = "With a strong commitment to quality, integrity, and long-term partnerships...",
+        Paragraph4De = "Mit einem starken Engagement für Qualität, Integrität...",
+        ImageUrl = "/images/irrawaddy-logo.png"
+    };
+
+    private string imagePreviewUrl = "/images/irrawaddy-logo.png";
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/cms/dashboard");
+    }
+
+    private void SwitchLanguage()
+    {
+        currentLang = currentLang == "en" ? "de" : "en";
+    }
+
+    private async Task HandleFileSelection(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file != null)
+        {
+            var format = file.ContentType;
+            var buffer = new byte[file.Size];
+            await file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024).ReadAsync(buffer);
+            imagePreviewUrl = $"data:{format};base64,{Convert.ToBase64String(buffer)}";
+
+            aboutModel.ImageUrl = file.Name;
+        }
+    }
+
+    private async Task HandleSave()
+    {
+        isLoading = true;
+        showNotification = false;
+        StateHasChanged();
+
+        try
+        {
+            await Task.Delay(1000); 
+
+            notificationMessage = "Changes saved successfully to the database!";
+            notificationType = "success";
+            showNotification = true;
+        }
+        catch (Exception)
+        {
+            notificationMessage = "Failed to save changes. Please try again.";
+            notificationType = "error";
+            showNotification = true;
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+
+            _ = Task.Run(async () =>
+            {
+                await Task.Delay(4000);
+                showNotification = false;
+                await InvokeAsync(StateHasChanged);
+            });
+        }
+    }
+
+    public class AboutSectionModel
+    {
+        public string SubTitleEn { get; set; } = "";
+        public string SubTitleDe { get; set; } = "";
+        public string MainTitleEn { get; set; } = "";
+        public string MainTitleDe { get; set; } = "";
+        public string Paragraph1En { get; set; } = "";
+        public string Paragraph1De { get; set; } = "";
+        public string Paragraph2En { get; set; } = "";
+        public string Paragraph2De { get; set; } = "";
+        public string Paragraph3En { get; set; } = "";
+        public string Paragraph3De { get; set; } = "";
+        public string Paragraph4En { get; set; } = "";
+        public string Paragraph4De { get; set; } = "";
+        public string ImageUrl { get; set; } = "";
+    }
+}

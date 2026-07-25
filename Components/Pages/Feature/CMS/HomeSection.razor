@@ -1,0 +1,195 @@
+@page "/cms/edit-home"
+@layout MainLayout
+
+<div class="max-w-4xl mx-auto space-y-6 relative">
+    
+    <!-- Success / Error Notification Banner -->
+    @if (showNotification)
+    {
+        <div class="transition-all duration-300 flex items-center justify-between p-4 rounded-md border text-xs font-medium shadow-sm @(notificationType == "success" ? "bg-[#5C1D24]/10 border-[#5C1D24]/30 text-[#5C1D24]" : "bg-red-50 border-red-200 text-red-700")">
+            <div class="flex items-center gap-2">
+                @if (notificationType == "success")
+                {
+                    <svg class="w-4 h-4 text-[#5C1D24]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+                }
+                else
+                {
+                    <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
+                }
+                <span>@notificationMessage</span>
+            </div>
+            <button @onclick="() => showNotification = false" class="text-xs uppercase font-bold opacity-70 hover:opacity-100 cursor-pointer">
+                ✕
+            </button>
+        </div>
+    }
+
+    <!-- Page Header & Language Switcher -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#E6E0DD] pb-6 gap-4">
+        <div>
+            <span class="text-xs uppercase text-[#5C1D24] font-medium block mb-1 tracking-normal">
+                CMS Portal • Content Management
+            </span>
+            <h1 class="text-2xl font-semibold text-[#2D2424]">
+                Edit Home Section (Hero)
+            </h1>
+        </div>
+
+        <div class="flex items-center gap-4">
+            <!-- Language Selector Tabs with Completion Status Indicator -->
+            <div class="inline-flex bg-[#E6E0DD]/60 p-1 rounded-md gap-1">
+                <button type="button" 
+                        @onclick='() => currentLang = "en"'
+                        class="px-3 py-1.5 text-xs font-medium rounded transition flex items-center gap-1.5 @(currentLang == "en" ? "bg-[#5C1D24] text-[#FCFBFA]" : "text-[#735A5A] hover:text-[#2D2424]")">
+                    🇬🇧 English
+                    @if (!string.IsNullOrWhiteSpace(homeModel.MainTitleEn))
+                    {
+                        <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                    }
+                </button>
+                <button type="button" 
+                        @onclick='() => currentLang = "de"'
+                        class="px-3 py-1.5 text-xs font-medium rounded transition flex items-center gap-1.5 @(currentLang == "de" ? "bg-[#5C1D24] text-[#FCFBFA]" : "text-[#735A5A] hover:text-[#2D2424]")">
+                    🇩🇪 German
+                    @if (!string.IsNullOrWhiteSpace(homeModel.MainTitleDe))
+                    {
+                        <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                    }
+                </button>
+            </div>
+
+            <button @onclick="HandleSave" 
+                    disabled="@isLoading"
+                    class="bg-[#5C1D24] hover:bg-[#4A171D] text-[#FCFBFA] px-6 py-2.5 text-xs uppercase font-medium rounded-md transition cursor-pointer disabled:opacity-50">
+                @if (isLoading) { <span>Saving...</span> } else { <span>Save Changes</span> }
+            </button>
+        </div>
+    </div>
+
+    <!-- Edit Form Card Container -->
+    <div class="bg-[#FCFBFA] border border-[#E6E0DD] rounded-lg p-8 shadow-sm relative overflow-hidden">
+        
+        <!-- Loading Overlay -->
+        @if (isLoading)
+        {
+            <div class="absolute inset-0 bg-[#FCFBFA]/90 backdrop-blur-[2px] z-50 flex flex-col items-center justify-center space-y-3">
+                <div class="w-8 h-8 border-3 border-[#E6E0DD] border-t-[#5C1D24] rounded-full animate-spin"></div>
+                <span class="text-xs font-medium uppercase text-[#5C1D24] tracking-wider">
+                    Updating content...
+                </span>
+            </div>
+        }
+
+        <EditForm Model="homeModel" OnValidSubmit="HandleSave">
+            <div class="space-y-6">
+                
+                <!-- Reminder Banner -->
+                <div class="bg-[#5C1D24]/10 border border-[#5C1D24]/20 p-3 rounded-md text-xs text-[#5C1D24] font-medium flex justify-between items-center">
+                    <span>You are editing: <strong class="uppercase">@(currentLang == "en" ? "English (EN)" : "German (DE)")</strong>. Remember to check both tabs before saving!</span>
+                    <button type="button" @onclick="SwitchLanguage" class="underline font-bold hover:opacity-80 cursor-pointer">
+                        Switch to @(currentLang == "en" ? "German 🇩🇪" : "English 🇬🇧") ➔
+                    </button>
+                </div>
+
+                <!-- Main Title -->
+                <div>
+                    <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-2 tracking-normal">
+                        Main Title (@(currentLang.ToUpper()))
+                    </label>
+                    @if (currentLang == "en")
+                    {
+                        <InputText @bind-Value="homeModel.MainTitleEn"
+                                   class="w-full bg-white border border-[#D9D0CC] px-3.5 py-3 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
+                    }
+                    else
+                    {
+                        <InputText @bind-Value="homeModel.MainTitleDe"
+                                   class="w-full bg-white border border-[#D9D0CC] px-3.5 py-3 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
+                    }
+                </div>
+
+                <!-- Description Paragraph 1 -->
+                <div>
+                    <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-2 tracking-normal">
+                        Description Paragraph 1 (@(currentLang.ToUpper()))
+                    </label>
+                    @if (currentLang == "en")
+                    {
+                        <InputTextArea @bind-Value="homeModel.Description1En" rows="3"
+                                       class="w-full bg-white border border-[#D9D0CC] px-3.5 py-3 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
+                    }
+                    else
+                    {
+                        <InputTextArea @bind-Value="homeModel.Description1De" rows="3"
+                                       class="w-full bg-white border border-[#D9D0CC] px-3.5 py-3 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
+                    }
+                </div>
+
+            </div>
+        </EditForm>
+    </div>
+
+</div>
+
+@code {
+    private string currentLang = "en";
+    private bool isLoading = false;
+    private bool showNotification = false;
+    private string notificationMessage = "";
+    private string notificationType = "success";
+
+    private HomeSectionModel homeModel = new()
+    {
+        MainTitleEn = "Connecting Germany and Myanmar Through Business, Trade, and Innovation",
+        MainTitleDe = "Deutschland und Myanmar durch Wirtschaft, Handel und Innovation verbinden",
+        Description1En = "Irrawaddy GmbH is a Munich-based company dedicated to creating business opportunities between Germany and Myanmar.",
+        Description1De = "Die Irrawaddy GmbH ist ein in München ansässiges Unternehmen..."
+    };
+
+    private void SwitchLanguage()
+    {
+        currentLang = currentLang == "en" ? "de" : "en";
+    }
+
+    private async Task HandleSave()
+    {
+        isLoading = true;
+        showNotification = false;
+        StateHasChanged();
+
+        try
+        {
+            await Task.Delay(1000); 
+
+            notificationMessage = "Changes saved successfully to the database!";
+            notificationType = "success";
+            showNotification = true;
+        }
+        catch (Exception)
+        {
+            notificationMessage = "Failed to save changes. Please try again.";
+            notificationType = "error";
+            showNotification = true;
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+
+            _ = Task.Run(async () =>
+            {
+                await Task.Delay(4000);
+                showNotification = false;
+                await InvokeAsync(StateHasChanged);
+            });
+        }
+    }
+
+    public class HomeSectionModel
+    {
+        public string MainTitleEn { get; set; } = "";
+        public string Description1En { get; set; } = "";
+        public string MainTitleDe { get; set; } = "";
+        public string Description1De { get; set; } = "";
+    }
+}

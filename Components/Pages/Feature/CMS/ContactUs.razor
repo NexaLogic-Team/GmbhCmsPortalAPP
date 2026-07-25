@@ -1,0 +1,197 @@
+@page "/cms/edit-contact"
+@layout MainLayout
+@inject NavigationManager Navigation
+
+<div class="max-w-5xl mx-auto space-y-10">
+    
+    <!-- Page Header -->
+    <div class="flex items-center justify-between border-b border-[#E6E0DD] pb-6">
+        <div class="flex items-center space-x-4">
+            <!-- Back Button -->
+            <button @onclick="GoBack" 
+                    class="bg-white border border-[#D9D0CC] hover:bg-[#F5EFEE] text-[#5C1D24] p-2 rounded-md transition cursor-pointer flex items-center justify-center"
+                    title="Back">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+            </button>
+            <div>
+                <span class="text-xs uppercase text-[#5C1D24] font-medium block mb-1 tracking-normal">
+                    CMS Portal • Content Management
+                </span>
+                <h1 class="text-2xl font-semibold text-[#2D2424]">
+                    Manage Contact Us & Inquiries
+                </h1>
+            </div>
+        </div>
+    </div>
+
+    <!-- PART 1: Company Contact Info Settings -->
+    <div class="bg-[#FCFBFA] border border-[#E6E0DD] rounded-lg p-6 shadow-sm space-y-6">
+        <div class="border-b border-[#E6E0DD] pb-4">
+            <span class="text-xs uppercase font-medium text-[#5C1D24]">Section 1</span>
+            <h3 class="text-lg font-semibold text-[#2D2424]">Company Information & Location</h3>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-1">Section Subtitle</label>
+                <input type="text" @bind="contactSubtitle" class="w-full bg-white border border-[#D9D0CC] px-3.5 py-2.5 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
+            </div>
+            <div>
+                <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-1">Main Title</label>
+                <input type="text" @bind="contactTitle" class="w-full bg-white border border-[#D9D0CC] px-3.5 py-2.5 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-1">Company Name</label>
+                <input type="text" @bind="companyName" class="w-full bg-white border border-[#D9D0CC] px-3.5 py-2.5 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
+            </div>
+            <div>
+                <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-1">Google Maps Link URL</label>
+                <input type="text" @bind="mapsUrl" class="w-full bg-white border border-[#D9D0CC] px-3.5 py-2.5 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
+            </div>
+        </div>
+
+        <div>
+            <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-1">Street Address & City Details</label>
+            <textarea @bind="companyAddress" rows="4" class="w-full bg-white border border-[#D9D0CC] px-3.5 py-2.5 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"></textarea>
+        </div>
+
+        <div class="flex justify-end">
+            <button @onclick="SaveContactInfo" class="bg-[#5C1D24] hover:bg-[#4A171D] text-[#FCFBFA] px-6 py-2.5 text-xs uppercase font-medium rounded-md transition cursor-pointer">
+                Save Contact Info
+            </button>
+        </div>
+    </div>
+
+    <!-- PART 2: Received Customer Messages / Inquiries List -->
+    <div class="bg-[#FCFBFA] border border-[#E6E0DD] rounded-lg p-6 shadow-sm space-y-6">
+        <div class="border-b border-[#E6E0DD] pb-4 flex items-center justify-between">
+            <div>
+                <span class="text-xs uppercase font-medium text-[#5C1D24]">Section 2</span>
+                <h3 class="text-lg font-semibold text-[#2D2424]">Customer Messages & Inquiries (@messagesList.Count)</h3>
+            </div>
+        </div>
+
+        <div class="space-y-4">
+            @if (!messagesList.Any())
+            {
+                <p class="text-xs text-[#5C4D4D] italic text-center py-6">No messages received yet.</p>
+            }
+            else
+            {
+                <div class="grid grid-cols-1 gap-4">
+                    @foreach (var msg in messagesList)
+                    {
+                        <div class="bg-white border border-[#E6E0DD] rounded-lg p-5 shadow-2xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                            <div class="space-y-1">
+                                <div class="flex items-center gap-3">
+                                    <h4 class="text-sm font-bold text-[#2D2424]">@msg.Name</h4>
+                                    <span class="text-xs text-[#5C1D24] font-medium bg-[#5C1D24]/10 px-2.5 py-0.5 rounded">@msg.Email</span>
+                                    <span class="text-[10px] text-[#735A5A]">@msg.DateString</span>
+                                </div>
+                                <p class="text-xs text-[#5C4D4D] mt-2">@msg.Message</p>
+                            </div>
+
+                            <button @onclick="() => PromptDeleteMessage(msg)" 
+                                    class="text-xs uppercase font-medium text-red-700 hover:underline flex items-center gap-1 cursor-pointer self-end md:self-center shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                                Delete
+                            </button>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+
+</div>
+
+<!-- Delete Confirmation Modal for Message -->
+@if (isDeleteModalOpen)
+{
+    <div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="bg-[#FCFBFA] border border-[#E6E0DD] rounded-lg max-w-sm w-full p-6 shadow-xl space-y-6 text-center">
+            <div class="w-12 h-12 rounded-full bg-red-100 text-red-700 flex items-center justify-center mx-auto">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+            </div>
+
+            <div class="space-y-2">
+                <h3 class="text-base font-semibold text-[#2D2424]">Delete Message</h3>
+                <p class="text-xs text-[#5C4D4D]">
+                    Are you sure you want to delete this message from <span class="font-semibold text-[#2D2424]">"@msgToDelete?.Name"</span>? This action cannot be undone.
+                </p>
+            </div>
+
+            <div class="flex justify-center gap-3 pt-2">
+                <button @onclick="CloseDeleteModal" class="flex-1 bg-white border border-[#D9D0CC] text-[#735A5A] hover:bg-[#F5EFEE] px-4 py-2 text-xs uppercase font-medium rounded-md transition">Cancel</button>
+                <button @onclick="ConfirmDeleteMessage" class="flex-1 bg-red-700 hover:bg-red-800 text-white px-4 py-2 text-xs uppercase font-medium rounded-md transition">Delete</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    // Contact Info State
+    private string contactSubtitle = "INQUIRIES";
+    private string contactTitle = "Contact Us";
+    private string companyName = "Irrawaddy GmbH";
+    private string companyAddress = "Dingolfinger Straße 15\n81673 München\nGermany";
+    private string mapsUrl = "https://goo.gl/maps/...";
+
+    // Messages List State
+    private List<ContactMessageModel> messagesList = new()
+    {
+        new ContactMessageModel { Id = 1, Name = "Alexander Schmidt", Email = "alex.schmidt@example.com", Message = "I would like to inquire about your business partnership and trade consulting services in Germany.", DateString = "2026-07-24 14:30" },
+        new ContactMessageModel { Id = 2, Name = "Aung Kyaw", Email = "aungkyaw@example.com", Message = "Hello, do you provide private dining event organization services in Munich?", DateString = "2026-07-23 10:15" }
+    };
+
+    private bool isDeleteModalOpen = false;
+    private ContactMessageModel? msgToDelete = null;
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/cms/dashboard");
+    }
+
+    private void SaveContactInfo()
+    {
+    }
+
+    private void PromptDeleteMessage(ContactMessageModel msg)
+    {
+        msgToDelete = msg;
+        isDeleteModalOpen = true;
+    }
+
+    private void CloseDeleteModal()
+    {
+        isDeleteModalOpen = false;
+        msgToDelete = null;
+    }
+
+    private void ConfirmDeleteMessage()
+    {
+        if (msgToDelete != null)
+        {
+            messagesList.Remove(msgToDelete);
+        }
+        CloseDeleteModal();
+    }
+
+    public class ContactMessageModel
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = "";
+        public string Email { get; set; } = "";
+        public string Message { get; set; } = "";
+        public string DateString { get; set; } = "";
+    }
+}

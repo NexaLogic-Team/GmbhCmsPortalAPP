@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "3mYwdWu5sK4=",
+  "success": true,
+  "projectFilePath": "/Users/minthukha/Projects/GmbhCmsPortalApp/GmbhCmsPortalApp.csproj",
+  "expectedPackageFiles": [
+    "/Users/minthukha/.nuget/packages/microsoft.aspnetcore.app.internal.assets/10.0.10/microsoft.aspnetcore.app.internal.assets.10.0.10.nupkg.sha512"
+  ],
+  "logs": []
+}

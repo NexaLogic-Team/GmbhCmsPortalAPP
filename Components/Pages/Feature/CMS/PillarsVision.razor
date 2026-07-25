@@ -1,0 +1,272 @@
+@page "/cms/edit-pillars-vision"
+@layout MainLayout
+@inject NavigationManager Navigation
+
+<div class="max-w-5xl mx-auto space-y-10">
+    
+    <!-- Page Header -->
+    <div class="flex items-center justify-between border-b border-[#E6E0DD] pb-6">
+        <div class="flex items-center space-x-4">
+            <!-- Back Button -->
+            <button @onclick="GoBack" 
+                    class="bg-white border border-[#D9D0CC] hover:bg-[#F5EFEE] text-[#5C1D24] p-2 rounded-md transition cursor-pointer flex items-center justify-center"
+                    title="Back">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+            </button>
+            <div>
+                <span class="text-xs uppercase text-[#5C1D24] font-medium block mb-1 tracking-normal">
+                    CMS Portal • Content Management
+                </span>
+                <h1 class="text-2xl font-semibold text-[#2D2424]">
+                    Manage Why Choose Us & Vision
+                </h1>
+            </div>
+        </div>
+    </div>
+
+    <!-- PART 1: Why Choose Us (Our Pillars) Section -->
+    <div class="bg-[#FCFBFA] border border-[#E6E0DD] rounded-lg p-6 shadow-sm space-y-6">
+        
+        <!-- Header & Add Button -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#E6E0DD] pb-4">
+            <div>
+                <span class="text-xs uppercase font-medium text-[#5C1D24]">Section 1</span>
+                <h3 class="text-lg font-semibold text-[#2D2424]">Why Choose Us (Our Pillars)</h3>
+            </div>
+            <button @onclick="OpenCreatePillarModal" 
+                    class="bg-[#5C1D24] hover:bg-[#4A171D] text-[#FCFBFA] px-4 py-2 text-xs uppercase font-medium rounded-md transition cursor-pointer flex items-center gap-2 self-start">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                Add New Point
+            </button>
+        </div>
+
+        <!-- Section Main Header Inputs -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-1">Subtitle</label>
+                <input type="text" @bind="pillarSubtitle" class="w-full bg-white border border-[#D9D0CC] px-3 py-2 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
+            </div>
+            <div>
+                <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-1">Main Title</label>
+                <input type="text" @bind="pillarTitle" class="w-full bg-white border border-[#D9D0CC] px-3 py-2 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
+            </div>
+        </div>
+
+        <!-- Pillars Bullet Points List -->
+        <div class="space-y-3 pt-2">
+            <h4 class="text-xs uppercase font-semibold text-[#5C4D4D]">Points List (@pillarsList.Count)</h4>
+            
+            <div class="space-y-2">
+                @foreach (var pillar in pillarsList)
+                {
+                    <div class="flex items-center justify-between bg-white border border-[#E6E0DD] px-4 py-3 rounded-md shadow-2xs">
+                        <div class="flex items-center gap-3">
+                            <span class="w-2 h-2 rounded-full bg-[#5C1D24]"></span>
+                            <span class="text-sm text-[#2D2424]">@pillar.Text</span>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <button @onclick="() => OpenEditPillarModal(pillar)" class="text-xs uppercase font-medium text-[#5C1D24] hover:underline cursor-pointer">
+                                Edit
+                            </button>
+                            <button @onclick="() => PromptDeletePillar(pillar)" class="text-xs uppercase font-medium text-red-700 hover:underline cursor-pointer">
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+    </div>
+
+    <!-- PART 2: Our Vision (Our Outlook) Section -->
+    <div class="bg-[#FCFBFA] border border-[#E6E0DD] rounded-lg p-6 shadow-sm space-y-6">
+        
+        <div class="border-b border-[#E6E0DD] pb-4">
+            <span class="text-xs uppercase font-medium text-[#5C1D24]">Section 2</span>
+            <h3 class="text-lg font-semibold text-[#2D2424]">Our Vision (Our Outlook)</h3>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-1">Subtitle</label>
+                <input type="text" @bind="visionSubtitle" class="w-full bg-white border border-[#D9D0CC] px-3 py-2 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
+            </div>
+            <div>
+                <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-1">Main Title</label>
+                <input type="text" @bind="visionTitle" class="w-full bg-white border border-[#D9D0CC] px-3 py-2 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
+            </div>
+        </div>
+
+        <div>
+            <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-1">Vision Quote / Description</label>
+            <textarea @bind="visionDescription" rows="4" class="w-full bg-white border border-[#D9D0CC] px-3 py-2 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"></textarea>
+        </div>
+
+        <div class="flex justify-end">
+            <button @onclick="SaveVisionChanges" class="bg-[#5C1D24] hover:bg-[#4A171D] text-[#FCFBFA] px-6 py-2.5 text-xs uppercase font-medium rounded-md transition cursor-pointer">
+                Save Vision Changes
+            </button>
+        </div>
+
+    </div>
+
+</div>
+
+<!-- Modal for Create/Edit Pillar Item -->
+@if (isPillarModalOpen)
+{
+    <div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="bg-[#FCFBFA] border border-[#E6E0DD] rounded-lg max-w-md w-full p-6 shadow-xl space-y-5">
+            <div class="flex items-center justify-between border-b border-[#E6E0DD] pb-3">
+                <h3 class="text-base font-semibold text-[#2D2424]">
+                    @(isPillarEditMode ? "Edit Pillar Point" : "Add Pillar Point")
+                </h3>
+                <button @onclick="ClosePillarModal" class="text-[#735A5A] hover:text-[#2D2424]">✕</button>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-1">Point Text</label>
+                    <input type="text" @bind="activePillar.Text" class="w-full bg-white border border-[#D9D0CC] px-3 py-2 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md" />
+                </div>
+
+                <div class="flex justify-end gap-3 pt-2 border-t border-[#E6E0DD]">
+                    <button @onclick="ClosePillarModal" class="bg-white border border-[#D9D0CC] text-[#735A5A] hover:bg-[#F5EFEE] px-4 py-2 text-xs uppercase font-medium rounded-md transition">Cancel</button>
+                    <button @onclick="SavePillar" class="bg-[#5C1D24] hover:bg-[#4A171D] text-[#FCFBFA] px-5 py-2 text-xs uppercase font-medium rounded-md transition">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Delete Confirmation Modal for Pillar -->
+@if (isDeleteModalOpen)
+{
+    <div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="bg-[#FCFBFA] border border-[#E6E0DD] rounded-lg max-w-sm w-full p-6 shadow-xl space-y-6 text-center">
+            <div class="w-12 h-12 rounded-full bg-red-100 text-red-700 flex items-center justify-center mx-auto">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+            </div>
+
+            <div class="space-y-2">
+                <h3 class="text-base font-semibold text-[#2D2424]">Delete Point</h3>
+                <p class="text-xs text-[#5C4D4D]">
+                    Are you sure you want to delete this item? This action cannot be undone.
+                </p>
+            </div>
+
+            <div class="flex justify-center gap-3 pt-2">
+                <button @onclick="CloseDeleteModal" class="flex-1 bg-white border border-[#D9D0CC] text-[#735A5A] hover:bg-[#F5EFEE] px-4 py-2 text-xs uppercase font-medium rounded-md transition">Cancel</button>
+                <button @onclick="ConfirmDeletePillar" class="flex-1 bg-red-700 hover:bg-red-800 text-white px-4 py-2 text-xs uppercase font-medium rounded-md transition">Delete</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    // Why Choose Us State
+    private string pillarSubtitle = "OUR PILLARS";
+    private string pillarTitle = "Why Choose Us";
+    private List<PillarModel> pillarsList = new()
+    {
+        new PillarModel { Id = 1, Text = "Based in Munich, Germany" },
+        new PillarModel { Id = 2, Text = "Multicultural expertise" },
+        new PillarModel { Id = 3, Text = "Professional and client-focused approach" },
+        new PillarModel { Id = 4, Text = "Reliable business partnerships" },
+        new PillarModel { Id = 5, Text = "Commitment to quality and transparency" }
+    };
+
+    // Vision State
+    private string visionSubtitle = "OUR OUTLOOK";
+    private string visionTitle = "Our Vision";
+    private string visionDescription = "To become a trusted bridge between Germany and Myanmar by creating opportunities in business, trade, hospitality, and education.";
+
+    // Modal States
+    private bool isPillarModalOpen = false;
+    private bool isPillarEditMode = false;
+    private PillarModel activePillar = new();
+
+    private bool isDeleteModalOpen = false;
+    private PillarModel? pillarToDelete = null;
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/cms/dashboard");
+    }
+
+    private void OpenCreatePillarModal()
+    {
+        isPillarEditMode = false;
+        activePillar = new PillarModel();
+        isPillarModalOpen = true;
+    }
+
+    private void OpenEditPillarModal(PillarModel pillar)
+    {
+        isPillarEditMode = true;
+        activePillar = new PillarModel { Id = pillar.Id, Text = pillar.Text };
+        isPillarModalOpen = true;
+    }
+
+    private void ClosePillarModal()
+    {
+        isPillarModalOpen = false;
+    }
+
+    private void SavePillar()
+    {
+        if (isPillarEditMode)
+        {
+            var existing = pillarsList.FirstOrDefault(p => p.Id == activePillar.Id);
+            if (existing != null)
+            {
+                existing.Text = activePillar.Text;
+            }
+        }
+        else
+        {
+            activePillar.Id = pillarsList.Any() ? pillarsList.Max(p => p.Id) + 1 : 1;
+            pillarsList.Add(activePillar);
+        }
+        isPillarModalOpen = false;
+    }
+
+    private void PromptDeletePillar(PillarModel pillar)
+    {
+        pillarToDelete = pillar;
+        isDeleteModalOpen = true;
+    }
+
+    private void CloseDeleteModal()
+    {
+        isDeleteModalOpen = false;
+        pillarToDelete = null;
+    }
+
+    private void ConfirmDeletePillar()
+    {
+        if (pillarToDelete != null)
+        {
+            pillarsList.Remove(pillarToDelete);
+        }
+        CloseDeleteModal();
+    }
+
+    private void SaveVisionChanges()
+    {
+        // Vision သိမ်းဆည်းသည့် Logic ထည့်ရန်
+    }
+
+    public class PillarModel
+    {
+        public int Id { get; set; }
+        public string Text { get; set; } = "";
+    }
+}
