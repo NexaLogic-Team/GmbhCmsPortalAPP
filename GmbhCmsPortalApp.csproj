@@ -12,5 +12,5 @@
     <AdditionalFiles Include="Components\Common\Error.razor" />
     <AdditionalFiles Include="Components\Common\NotFound.razor" />
   </ItemGroup>
-
+  
 </Project>
