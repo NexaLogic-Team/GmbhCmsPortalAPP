@@ -1,5 +1,10 @@
 @page "/"
+@using GmbhCmsPortalApp.Components.Service
 @layout EmptyLayout
+@inject HttpClient Http
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+@inject IJSRuntime JSRuntime
 
 <head>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -7,6 +12,7 @@
         .font-poppins {
             font-family: 'Poppins', sans-serif;
         }
+
         .logo-blend {
             mix-blend-mode: multiply;
         }
@@ -33,21 +39,24 @@
         <!-- Theme-matched Error Notification -->
         @if (!string.IsNullOrEmpty(error))
         {
-            <div class="mb-6 bg-[#FDF8F8] border-l-4 border-[#5C1D24] text-[#5C1D24] p-4 rounded-r-md text-xs font-medium flex items-center space-x-2">
+            <div
+                class="mb-6 bg-[#FDF8F8] border-l-4 border-[#5C1D24] text-[#5C1D24] p-4 rounded-r-md text-xs font-medium flex items-center space-x-2">
                 <svg class="w-4 h-4 shrink-0 text-[#5C1D24]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                 </svg>
-                <span>Invalid email or password. Please check your credentials and try again.</span>
+                <span>@error</span>
             </div>
         }
 
-        <form id="loginForm" action="/api/login" method="post" onsubmit="handleLoginSubmit(event)">
+        <!-- HTML action ဖယ်ရှားပြီး Blazor @onsubmit ဖြင့် ချိတ်ဆက်ခြင်း -->
+        <form id="loginForm" @onsubmit="HandleLogin">
             <div class="space-y-6 mb-8">
                 <div>
                     <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-2 tracking-normal">
                         Email
                     </label>
-                    <input type="email" name="email" id="emailInput"
+                    <input type="email" @bind="loginModel.Email" id="emailInput" required
                            placeholder="name@irrawaddy-gmbh.de"
                            class="w-full bg-white border border-[#D9D0CC] px-3.5 py-3 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] transition-none rounded-md disabled:opacity-50"/>
                 </div>
@@ -58,16 +67,30 @@
                             Password
                         </label>
                     </div>
-                    <input type="password" name="password" id="passwordInput"
+                    <input type="password" @bind="loginModel.Password" id="passwordInput" required
                            placeholder="••••••••"
                            class="w-full bg-white border border-[#D9D0CC] px-3.5 py-3 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] transition-none rounded-md disabled:opacity-50"/>
                 </div>
             </div>
 
             <div class="mb-8">
-                <button type="submit" id="submitBtn"
+                <button type="submit" id="submitBtn" disabled="@isLoading"
                         class="w-full bg-[#5C1D24] hover:bg-[#4A171D] text-[#FCFBFA] px-6 py-3 text-xs uppercase font-medium transition-none cursor-pointer border border-[#5C1D24] rounded-md text-center flex items-center justify-center space-x-2 disabled:opacity-75 disabled:cursor-not-allowed">
-                    <span id="btnText">Sign In to Dashboard</span>
+                    @if (isLoading)
+                    {
+                        <svg class="animate-spin h-4 w-4 text-[#FCFBFA] inline-block mr-2"
+                             xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                    stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor"
+                                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span>Signing In...</span>
+                    }
+                    else
+                    {
+                        <span id="btnText">Sign In to Dashboard</span>
+                    }
                 </button>
             </div>
         </form>
@@ -79,8 +102,8 @@
         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between text-xs text-[#8C7A7A] gap-4">
             <div>
                 <div>&copy; 2026 Irrawaddy GmbH Munich. All rights reserved. Created by <a
-                                                                                            href="https://www.nexalogic.org/" target="_blank"
-                                                                                            class="text-[#5C1D24] font-medium hover:underline">Nexalogic</a>
+                        href="https://www.nexalogic.org/" target="_blank"
+                        class="text-[#5C1D24] font-medium hover:underline">Nexalogic</a>
                 </div>
             </div>
         </div>
@@ -88,31 +111,58 @@
     </div>
 </div>
 
-<script>
-    function handleLoginSubmit(event) {
-        event.preventDefault();
-
-        const form = document.getElementById('loginForm');
-        const submitBtn = document.getElementById('submitBtn');
-        const btnText = document.getElementById('btnText');
-
-        submitBtn.disabled = true;
-
-        btnText.innerHTML = `
-            <svg class="animate-spin h-4 w-4 text-[#FCFBFA] inline-block mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            Signing In...
-        `;
-
-        setTimeout(() => {
-            HTMLFormElement.prototype.submit.call(form);
-        }, 2000);
-    }
-</script>
-
 @code {
-    [SupplyParameterFromQuery(Name = "error")]
-    private string? error { get; set; }
+    private LoginDto loginModel = new();
+    private string? error;
+    private bool isLoading = false;
+
+    private async Task HandleLogin()
+    {
+        isLoading = true;
+        error = null;
+
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/cms/auth/login", loginModel);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<TokenResponseDto>();
+                if (result != null && !string.IsNullOrEmpty(result.Token))
+                {
+                    await JSRuntime.InvokeVoidAsync("localStorage.setItem", "authToken", result.Token);
+
+                    if (AuthStateProvider is CustomJwtAuthenticationStateProvider customAuthProv)
+                    {
+                        customAuthProv.NotifyUserAuthentication(result.Token);
+                    }
+
+                    Navigation.NavigateTo("/cms/dashboard");
+                    return;
+                }
+            }
+
+            error = "Invalid email or password. Please check your credentials and try again.";
+        }
+        catch (Exception)
+        {
+            error = "Unable to connect to the server. Please check your connection and try again.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    public class LoginDto
+    {
+        public string Email { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+    }
+
+    public class TokenResponseDto
+    {
+        public string Token { get; set; } = string.Empty;
+    }
+
 }

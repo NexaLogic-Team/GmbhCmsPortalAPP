@@ -1,6 +1,6 @@
 @page "/cms/dashboard"
 @layout MainLayout
-@attribute [Authorize(Roles = "GmbHAdmin2026")]
+@attribute [Authorize]
 
 <div class="max-w-6xl mx-auto space-y-8">
     
@@ -151,7 +151,7 @@
     {
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
-
+    
         if (user.Identity is null || !user.Identity.IsAuthenticated)
         {
             Navigation.NavigateTo("/");
