@@ -19,6 +19,16 @@ builder.Services.AddScoped(sp => new HttpClient
 
 builder.Services.AddHttpContextAccessor();
 
+builder.Services.AddTransient<CustomAuthorizationMessageHandler>();
+
+// 2. Register a named HttpClient ("AuthorizedClient") using the handler and base URL from configuration
+builder.Services.AddHttpClient("AuthorizedClient", client =>
+    {
+        var baseUrl = builder.Configuration["ApiSettings:BaseUrl"] ?? "https://localhost:7123/";
+        client.BaseAddress = new Uri(baseUrl);
+    })
+    .AddHttpMessageHandler<CustomAuthorizationMessageHandler>();
+
 builder.Services.AddScoped<AuthenticationStateProvider, CustomJwtAuthenticationStateProvider>();
 
 builder.Services.AddAuthorizationCore();
