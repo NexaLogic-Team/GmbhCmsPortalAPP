@@ -1,5 +1,6 @@
 @page "/"
 @page "/Account/Login"
+@using System.Text.Json.Serialization
 @using GmbhCmsPortalApp.Components.Service
 @layout EmptyLayout
 @inject HttpClient Http
@@ -143,6 +144,13 @@
                 }
             }
 
+            if (!response.IsSuccessStatusCode)
+            {
+                // Backend က ပြန်လိုက်တဲ့ Error အသေးစိတ်ကို ဖတ်မည်
+                var errorResponseBody = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"API Error: {errorResponseBody}");
+            }
+            
             error = "Invalid email or password. Please check your credentials and try again.";
         }
         catch (Exception)
@@ -157,10 +165,13 @@
 
     public class LoginDto
     {
+        [JsonPropertyName("email")]
         public string Email { get; set; } = string.Empty;
+
+        [JsonPropertyName("password")]
         public string Password { get; set; } = string.Empty;
     }
-
+    
     public class TokenResponseDto
     {
         public string Token { get; set; } = string.Empty;

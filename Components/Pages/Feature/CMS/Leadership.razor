@@ -5,15 +5,50 @@
 @inject AuthenticationStateProvider AuthStateProvider
 @inject NavigationManager Navigation
 
+<!-- Notification Toast System (Minimal Theme) -->
+@if (toastMessage != null)
+{
+    <div
+        class="fixed top-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-lg shadow-md border text-xs font-medium transition-all duration-300 animate-fade-in bg-white border-[#E6E0DD] text-[#2D2424]">
+
+        @if (toastType == ToastType.Success)
+        {
+            <!-- Subtle Dark Green/Theme Accent Icon -->
+            <div class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+                </svg>
+            </div>
+        }
+        else
+        {
+            <!-- Subtle Red Icon -->
+            <div class="w-6 h-6 rounded-full bg-rose-100 text-rose-800 flex items-center justify-center shrink-0">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </div>
+        }
+
+        <!-- Message Body -->
+        <span class="text-[#2D2424] font-medium tracking-wide">@toastMessage</span>
+
+        <!-- Close Button -->
+        <button @onclick="DismissToast" class="ml-3 text-[#735A5A] hover:text-[#2D2424] transition">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+        </button>
+    </div>
+}
+
 <div class="max-w-5xl mx-auto space-y-8">
 
     <!-- Page Header -->
     <div class="flex items-center justify-between border-b border-[#E6E0DD] pb-6">
         <div class="flex items-center space-x-4">
-            <!-- Back Button -->
             <button @onclick="GoBack"
-                    class="bg-white border border-[#D9D0CC] hover:bg-[#F5EFEE] text-[#5C1D24] p-2 rounded-md transition cursor-pointer flex items-center justify-center"
-                    title="Back">
+                    class="bg-white border border-[#D9D0CC] hover:bg-[#F5EFEE] text-[#5C1D24] p-2 rounded-md transition cursor-pointer flex items-center justify-center">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
                      stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -30,7 +65,6 @@
             </div>
         </div>
 
-        <!-- Add New Leader Button -->
         <button @onclick="OpenCreateModal"
                 class="bg-[#5C1D24] hover:bg-[#4A171D] text-[#FCFBFA] px-5 py-2.5 text-xs uppercase font-medium rounded-md transition cursor-pointer flex items-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
@@ -43,9 +77,29 @@
 
     <!-- Section Header Settings -->
     <div class="bg-[#FCFBFA] border border-[#E6E0DD] rounded-lg p-6 shadow-sm space-y-4">
-        <h3 class="text-sm font-semibold uppercase text-[#5C1D24] tracking-normal border-b border-[#E6E0DD] pb-2">
-            Section Header Settings
-        </h3>
+        <div class="flex items-center justify-between border-b border-[#E6E0DD] pb-2">
+            <h3 class="text-sm font-semibold uppercase text-[#5C1D24] tracking-normal">
+                Section Header Settings
+            </h3>
+            <button @onclick="SaveHeaderSettings" disabled="@isSavingHeader"
+                    class="bg-[#5C1D24] hover:bg-[#4A171D] text-white px-4 py-1.5 text-xs font-medium rounded-md transition flex items-center gap-1.5 disabled:opacity-50">
+                @if (isSavingHeader)
+                {
+                    <svg class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>Saving...</span>
+                }
+                else
+                {
+                    <span>Save Header</span>
+                }
+            </button>
+        </div>
+
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
                 <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-2 tracking-normal">
@@ -70,54 +124,85 @@
             Leaders List (@leadersList.Count)
         </h3>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            @foreach (var leader in leadersList)
-            {
-                <div
-                    class="bg-[#FCFBFA] border border-[#E6E0DD] rounded-lg overflow-hidden shadow-sm flex flex-col justify-between">
-                    <div>
-                        <div class="p-6 flex flex-col items-center text-center border-b border-[#E6E0DD] bg-white">
-                            <div class="w-24 h-24 rounded-full overflow-hidden mb-4 border border-[#E6E0DD]">
-                                <img src="@leader.ImageUrl" alt="@leader.Name" class="w-full h-full object-cover"/>
+        @if (isPageLoading)
+        {
+            <div
+                class="flex flex-col items-center justify-center py-12 space-y-3 bg-[#FCFBFA] border border-[#E6E0DD] rounded-lg">
+                <svg class="animate-spin h-8 w-8 text-[#5C1D24]" xmlns="http://www.w3.org/2000/svg" fill="none"
+                     viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span class="text-xs font-medium text-[#5C4D4D]">Loading leadership profiles...</span>
+            </div>
+        }
+        else if (!leadersList.Any())
+        {
+            <div class="p-8 text-center bg-[#FCFBFA] border border-[#E6E0DD] rounded-lg text-xs text-[#5C4D4D]">
+                No leadership profiles found. Click "Add New Leader" to create one.
+            </div>
+        }
+        else
+        {
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                @foreach (var leader in leadersList)
+                {
+                    <div
+                        class="bg-[#FCFBFA] border border-[#E6E0DD] rounded-lg overflow-hidden shadow-sm flex flex-col justify-between">
+                        <div>
+                            <div class="p-6 flex flex-col items-center text-center border-b border-[#E6E0DD] bg-white">
+                                <div
+                                    class="w-24 h-24 rounded-full overflow-hidden mb-4 border border-[#E6E0DD] bg-gray-50 flex items-center justify-center">
+                                    @if (!string.IsNullOrEmpty(leader.ImageUrl))
+                                    {
+                                        <img src="@leader.ImageUrl" alt="@leader.Name"
+                                             class="w-full h-full object-cover"/>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-xs text-gray-400">No Image</span>
+                                    }
+                                </div>
+                                <span
+                                    class="text-[10px] uppercase font-semibold text-[#5C1D24] tracking-wider mb-1">@leader.Role</span>
+                                <h4 class="text-base font-bold text-[#2D2424]">@leader.Name</h4>
                             </div>
-                            <span
-                                class="text-[10px] uppercase font-semibold text-[#5C1D24] tracking-wider mb-1">@leader.Role</span>
-                            <h4 class="text-base font-bold text-[#2D2424]">@leader.Name</h4>
+                            <div class="p-5 space-y-2">
+                                <p class="text-xs text-[#5C4D4D] line-clamp-4">@leader.Bio</p>
+                            </div>
                         </div>
-                        <div class="p-5 space-y-2">
-                            <p class="text-xs text-[#5C4D4D] line-clamp-4">@leader.Bio</p>
-                        </div>
-                    </div>
 
-                    <!-- Card Actions (Edit / Delete) -->
-                    <div class="px-5 py-3 bg-white border-t border-[#E6E0DD] flex items-center justify-between">
-                        <button @onclick="() => OpenEditModal(leader)"
-                                class="text-xs uppercase font-medium text-[#5C1D24] hover:underline flex items-center gap-1 cursor-pointer">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24"
-                                 stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                            </svg>
-                            Edit
-                        </button>
-                        <button @onclick="() => PromptDelete(leader)"
-                                class="text-xs uppercase font-medium text-red-700 hover:underline flex items-center gap-1 cursor-pointer">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24"
-                                 stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                            </svg>
-                            Delete
-                        </button>
+                        <!-- Card Actions -->
+                        <div class="px-5 py-3 bg-white border-t border-[#E6E0DD] flex items-center justify-between">
+                            <button @onclick="() => OpenEditModal(leader)"
+                                    class="text-xs uppercase font-medium text-[#5C1D24] hover:underline flex items-center gap-1 cursor-pointer">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none"
+                                     viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                </svg>
+                                Edit
+                            </button>
+                            <button @onclick="() => PromptDelete(leader)"
+                                    class="text-xs uppercase font-medium text-red-700 hover:underline flex items-center gap-1 cursor-pointer">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none"
+                                     viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                </svg>
+                                Delete
+                            </button>
+                        </div>
                     </div>
-                </div>
-            }
-        </div>
+                }
+            </div>
+        }
     </div>
 
 </div>
 
-<!-- Create / Edit Modal Form -->
+<!-- Create / Edit Modal -->
 @if (isModalOpen)
 {
     <div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
@@ -128,38 +213,40 @@
                 <h3 class="text-base font-semibold text-[#2D2424]">
                     @(isEditMode ? "Edit Leader Profile" : "Add New Leader Profile")
                 </h3>
-                <button @onclick="CloseModal" class="text-[#735A5A] hover:text-[#2D2424]">
+                <button @onclick="CloseModal" disabled="@isSaving"
+                        class="text-[#735A5A] hover:text-[#2D2424] disabled:opacity-50">
                     ✕
                 </button>
             </div>
 
             <EditForm Model="activeLeader" OnValidSubmit="SaveLeader">
-                <div class="space-y-4">
+                <DataAnnotationsValidator/>
 
+                <div class="space-y-4">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-1">Full Name</label>
-                            <InputText @bind-Value="activeLeader.Name"
-                                       class="w-full bg-white border border-[#D9D0CC] px-3.5 py-2.5 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
+                            <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-1">Full Name *</label>
+                            <InputText @bind-Value="activeLeader.Name" disabled="@isSaving" required
+                                       class="w-full bg-white border border-[#D9D0CC] px-3.5 py-2.5 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md disabled:bg-gray-100"/>
                         </div>
                         <div>
                             <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-1">Role / Position
-                                (e.g., FOUNDER)</label>
-                            <InputText @bind-Value="activeLeader.Role"
-                                       class="w-full bg-white border border-[#D9D0CC] px-3.5 py-2.5 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
+                                *</label>
+                            <InputText @bind-Value="activeLeader.Role" disabled="@isSaving" required
+                                       class="w-full bg-white border border-[#D9D0CC] px-3.5 py-2.5 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md disabled:bg-gray-100"/>
                         </div>
                     </div>
 
                     <div>
                         <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-1">Biography /
                             Description</label>
-                        <InputTextArea @bind-Value="activeLeader.Bio" rows="5"
-                                       class="w-full bg-white border border-[#D9D0CC] px-3.5 py-2.5 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
+                        <InputTextArea @bind-Value="activeLeader.Bio" rows="5" disabled="@isSaving"
+                                       class="w-full bg-white border border-[#D9D0CC] px-3.5 py-2.5 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md disabled:bg-gray-100"/>
                     </div>
                     <div>
                         <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-1">Profile Image</label>
                         <InputFile OnChange="HandleFileSelection"
-                                   disabled="@isUploading"
+                                   disabled="@(isUploading || isSaving)"
                                    class="w-full bg-white border border-[#D9D0CC] p-2 text-xs text-[#2D2424] rounded-md cursor-pointer file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-medium file:bg-[#5C1D24] file:text-[#FCFBFA] disabled:opacity-50 disabled:cursor-not-allowed"/>
 
                         @if (isUploading)
@@ -173,7 +260,7 @@
                                     <path class="opacity-75" fill="currentColor"
                                           d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                 </svg>
-                                <span class="text-xs font-medium text-[#5C1D24]">Uploading image, please wait...</span>
+                                <span class="text-xs font-medium text-[#5C1D24]">Uploading image...</span>
                             </div>
                         }
                         else if (!string.IsNullOrEmpty(previewImageUrl))
@@ -186,13 +273,27 @@
                     </div>
 
                     <div class="flex justify-end gap-3 pt-4 border-t border-[#E6E0DD]">
-                        <button type="button" @onclick="CloseModal"
-                                class="bg-white border border-[#D9D0CC] text-[#735A5A] hover:bg-[#F5EFEE] px-4 py-2 text-xs uppercase font-medium rounded-md transition">
+                        <button type="button" @onclick="CloseModal" disabled="@isSaving"
+                                class="bg-white border border-[#D9D0CC] text-[#735A5A] hover:bg-[#F5EFEE] px-4 py-2 text-xs uppercase font-medium rounded-md transition disabled:opacity-50">
                             Cancel
                         </button>
-                        <button type="submit"
-                                class="bg-[#5C1D24] hover:bg-[#4A171D] text-[#FCFBFA] px-5 py-2 text-xs uppercase font-medium rounded-md transition">
-                            Save Profile
+                        <button type="submit" disabled="@(isSaving || isUploading)"
+                                class="bg-[#5C1D24] hover:bg-[#4A171D] text-[#FCFBFA] px-5 py-2 text-xs uppercase font-medium rounded-md transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                            @if (isSaving)
+                            {
+                                <svg class="animate-spin h-3.5 w-3.5 text-white" xmlns="http://www.w3.org/2000/svg"
+                                     fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                            stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor"
+                                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <span>Saving...</span>
+                            }
+                            else
+                            {
+                                <span>Save Profile</span>
+                            }
                         </button>
                     </div>
 
@@ -228,13 +329,27 @@
             </div>
 
             <div class="flex justify-center gap-3 pt-2">
-                <button type="button" @onclick="CloseDeleteModal"
-                        class="flex-1 bg-white border border-[#D9D0CC] text-[#735A5A] hover:bg-[#F5EFEE] px-4 py-2 text-xs uppercase font-medium rounded-md transition">
+                <button type="button" @onclick="CloseDeleteModal" disabled="@isDeleting"
+                        class="flex-1 bg-white border border-[#D9D0CC] text-[#735A5A] hover:bg-[#F5EFEE] px-4 py-2 text-xs uppercase font-medium rounded-md transition disabled:opacity-50">
                     Cancel
                 </button>
-                <button type="button" @onclick="ConfirmDelete"
-                        class="flex-1 bg-red-700 hover:bg-red-800 text-white px-4 py-2 text-xs uppercase font-medium rounded-md transition">
-                    Delete
+                <button type="button" @onclick="ConfirmDelete" disabled="@isDeleting"
+                        class="flex-1 bg-red-700 hover:bg-red-800 text-white px-4 py-2 text-xs uppercase font-medium rounded-md transition flex items-center justify-center gap-2 disabled:opacity-50">
+                    @if (isDeleting)
+                    {
+                        <svg class="animate-spin h-3.5 w-3.5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"
+                             viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                    stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor"
+                                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span>Deleting...</span>
+                    }
+                    else
+                    {
+                        <span>Delete</span>
+                    }
                 </button>
             </div>
 
@@ -249,6 +364,11 @@
 
     private List<LeaderModel> leadersList = new();
 
+    private bool isPageLoading = true;
+    private bool isSaving = false;
+    private bool isDeleting = false;
+    private bool isUploading = false;
+
     private bool isModalOpen = false;
     private bool isEditMode = false;
     private LeaderModel activeLeader = new();
@@ -257,9 +377,17 @@
     private bool isDeleteModalOpen = false;
     private LeaderModel? leaderToDelete = null;
 
-    private bool isUploading = false;
+    // Toast Notification States
+    private string? toastMessage = null;
+    private ToastType toastType = ToastType.Success;
 
     private const string BucketName = "gmbh";
+
+    public enum ToastType
+    {
+        Success,
+        Error
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -272,11 +400,67 @@
             return;
         }
 
-        await LoadLeadersAsync();
+        // await LoadLeadersAsync();
+        await Task.WhenAll(LoadHeaderSettingsAsync(), LoadLeadersAsync());
+    }
+
+    private bool isSavingHeader = false;
+
+    private async Task SaveHeaderSettings()
+    {
+        try
+        {
+            isSavingHeader = true;
+            var request = new UpdateHeaderRequest
+            {
+                Subtitle = sectionSubtitle,
+                MainTitle = sectionTitle
+            };
+
+            var response = await Http.PutAsJsonAsync($"api/cms/leadership/header?lang={currentLang}", request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                ShowToast("Header settings updated successfully!", ToastType.Success);
+            }
+            else
+            {
+                ShowToast("Failed to update header settings.", ToastType.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowToast($"Error: {ex.Message}", ToastType.Error);
+        }
+        finally
+        {
+            isSavingHeader = false;
+        }
+    }
+
+    private void ShowToast(string message, ToastType type)
+    {
+        toastMessage = message;
+        toastType = type;
+        StateHasChanged();
+
+        // 3 seconds အကြာတွင် Toast အလိုအလျောက် ပျောက်စေရန်
+        _ = Task.Run(async () =>
+        {
+            await Task.Delay(3000);
+            toastMessage = null;
+            await InvokeAsync(StateHasChanged);
+        });
+    }
+
+    private void DismissToast()
+    {
+        toastMessage = null;
     }
 
     private async Task LoadLeadersAsync()
     {
+        isPageLoading = true;
         try
         {
             var response = await Http.GetFromJsonAsync<List<LeaderModel>>($"api/cms/leadership?lang={currentLang}");
@@ -296,7 +480,11 @@
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error loading leaders: {ex.Message}");
+            ShowToast($"Failed to load leaders: {ex.Message}", ToastType.Error);
+        }
+        finally
+        {
+            isPageLoading = false;
         }
     }
 
@@ -343,6 +531,7 @@
 
     private void CloseModal()
     {
+        if (isSaving) return;
         isModalOpen = false;
     }
 
@@ -357,7 +546,7 @@
                 previewImageUrl = "";
 
                 using var content = new MultipartFormDataContent();
-                var fileStream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
+                var fileStream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024); // 10MB limit
                 var streamContent = new StreamContent(fileStream);
                 streamContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
 
@@ -368,17 +557,21 @@
                 if (response.IsSuccessStatusCode)
                 {
                     var result = await response.Content.ReadFromJsonAsync<UploadResponseModel>();
-
                     if (result != null)
                     {
                         activeLeader.ImageUrl = result.FileName;
                         previewImageUrl = await GetImageUrlAsync(BucketName, result.FileName);
+                        ShowToast("Image uploaded successfully!", ToastType.Success);
                     }
+                }
+                else
+                {
+                    ShowToast("Failed to upload image. Please try again.", ToastType.Error);
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error: {ex.Message}");
+                ShowToast($"Upload error: {ex.Message}", ToastType.Error);
             }
             finally
             {
@@ -391,6 +584,7 @@
     {
         try
         {
+            isSaving = true;
             HttpResponseMessage response;
 
             if (isEditMode)
@@ -406,16 +600,20 @@
             {
                 await LoadLeadersAsync();
                 isModalOpen = false;
+                ShowToast(isEditMode ? "Profile updated successfully!" : "New leader added successfully!", ToastType.Success);
             }
             else
             {
-                var errorContent = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"Failed to save leader: {errorContent}");
+                ShowToast("Failed to save leader profile.", ToastType.Error);
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error saving leader: {ex.Message}");
+            ShowToast($"Save error: {ex.Message}", ToastType.Error);
+        }
+        finally
+        {
+            isSaving = false;
         }
     }
 
@@ -427,22 +625,56 @@
 
     private void CloseDeleteModal()
     {
+        if (isDeleting) return;
         isDeleteModalOpen = false;
         leaderToDelete = null;
     }
 
+    private async Task LoadHeaderSettingsAsync()
+    {
+        try
+        {
+            var header = await Http.GetFromJsonAsync<HeaderResponseModel>($"api/cms/leadership/header?lang={currentLang}");
+            if (header != null)
+            {
+                sectionSubtitle = string.IsNullOrWhiteSpace(header.Subtitle) ? "BOARD OF DIRECTORS" : header.Subtitle;
+                sectionTitle = string.IsNullOrWhiteSpace(header.MainTitle) ? "Meet Our Leadership" : header.MainTitle;
+            }
+        }
+        catch (Exception ex)
+        {
+            // Header မရှိသေးတာ သို့မဟုတ် ပထမဆုံးအကြိမ် Error တက်ရင် Default Value အတိုင်း ထားပါမယ်
+            Console.WriteLine($"Header loading note: {ex.Message}");
+        }
+    }
+
     private async Task ConfirmDelete()
     {
-        if (leaderToDelete != null)
+        if (leaderToDelete == null) return;
+
+        try
         {
+            isDeleting = true;
             var response = await Http.DeleteAsync($"api/cms/leadership/{leaderToDelete.Id}");
             if (response.IsSuccessStatusCode)
             {
                 leadersList.Remove(leaderToDelete);
+                ShowToast("Leader profile deleted successfully!", ToastType.Success);
+            }
+            else
+            {
+                ShowToast("Failed to delete leader profile.", ToastType.Error);
             }
         }
-
-        CloseDeleteModal();
+        catch (Exception ex)
+        {
+            ShowToast($"Delete error: {ex.Message}", ToastType.Error);
+        }
+        finally
+        {
+            isDeleting = false;
+            CloseDeleteModal();
+        }
     }
 
     public class LeaderModel
@@ -464,6 +696,18 @@
     public class PresignedUrlResponseModel
     {
         public string PresignedUrl { get; set; } = "";
+    }
+
+    public class UpdateHeaderRequest
+    {
+        public string Subtitle { get; set; } = string.Empty;
+        public string MainTitle { get; set; } = string.Empty;
+    }
+
+    public class HeaderResponseModel
+    {
+        public string Subtitle { get; set; } = string.Empty;
+        public string MainTitle { get; set; } = string.Empty;
     }
 
 }
