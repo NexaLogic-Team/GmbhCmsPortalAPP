@@ -21,6 +21,7 @@ builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddTransient<CustomAuthorizationMessageHandler>();
 
+// 2. Register a named HttpClient ("AuthorizedClient") using the handler and base URL from configuration
 builder.Services.AddHttpClient("AuthorizedClient", client =>
     {
         var baseUrl = builder.Configuration["ApiSettings:BaseUrl"] ?? "https://localhost:7123/";
@@ -34,6 +35,7 @@ builder.Services.AddAuthorizationCore();
 
 var app = builder.Build();
 
+// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
