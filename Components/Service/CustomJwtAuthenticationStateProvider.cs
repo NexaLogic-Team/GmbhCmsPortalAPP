@@ -8,19 +8,26 @@ namespace GmbhCmsPortalApp.Components.Service;
 public class CustomJwtAuthenticationStateProvider : AuthenticationStateProvider
 {
     private readonly IJSRuntime _jsRuntime;
+    private readonly IHttpContextAccessor _httpContextAccessor;
     private ClaimsPrincipal _cachedUser = new(new ClaimsIdentity());
-
-    public CustomJwtAuthenticationStateProvider(IJSRuntime jsRuntime)
+    
+    public CustomJwtAuthenticationStateProvider(IJSRuntime jsRuntime, IHttpContextAccessor httpContextAccessor)
     {
         _jsRuntime = jsRuntime;
+        _httpContextAccessor = httpContextAccessor;
     }
 
     public override async Task<AuthenticationState> GetAuthenticationStateAsync()
     {
+        // 1. First check if we have an HttpContext available (useful during Server-side initial load/prerender if token is in cookies, etc.)
+        // If using localStorage, we handle it carefully. During prerendering, JS is not available.
         try
         {
-            // JavaScript LocalStorage မှ Token ကို ယူရန် ကြိုးစားခြင်း
-            var token = await _jsRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
+            var token = string.Empty;
+
+            // Check if JS Interop is available by trying to fetch from localStorage
+            // In Blazor Server prerendering, calling JS will throw an exception.
+            token = await _jsRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
 
             if (!string.IsNullOrEmpty(token))
             {
@@ -28,16 +35,20 @@ public class CustomJwtAuthenticationStateProvider : AuthenticationStateProvider
                 var identity = new ClaimsIdentity(claims, "jwt");
                 _cachedUser = new ClaimsPrincipal(identity);
             }
+            else
+            {
+                _cachedUser = new ClaimsPrincipal(new ClaimsIdentity());
+            }
         }
         catch
         {
-            // Prerendering အချိန် သို့မဟုတ် JS Interop အလုပ်မလုပ်သေးချိန်တွင် 
-            // Caching လုပ်ထားသော (သို့မဟုတ် Anonymous) User ကို ပြန်ပေးမည်
+            // During prerendering, JS interop fails, so we fallback to an anonymous user safely
+            _cachedUser = new ClaimsPrincipal(new ClaimsIdentity());
         }
 
         return new AuthenticationState(_cachedUser);
     }
-
+    
     public void NotifyUserAuthentication(string token)
     {
         var claims = ParseClaimsFromJwt(token);

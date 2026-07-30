@@ -1,6 +1,9 @@
 @page "/cms/edit-leadership"
 @layout MainLayout
-@attribute [Authorize(Roles = "GmbHAdmin2026")]
+@attribute [Authorize]
+@inject HttpClient Http
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
 
 <div class="max-w-5xl mx-auto space-y-8">
     
@@ -146,10 +149,10 @@
                         <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-1">Profile Image</label>
                         <InputFile OnChange="HandleFileSelection" class="w-full bg-white border border-[#D9D0CC] p-2 text-xs text-[#2D2424] rounded-md cursor-pointer file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-medium file:bg-[#5C1D24] file:text-[#FCFBFA]" />
                         
-                        @if (!string.IsNullOrEmpty(activeLeader.ImageUrl))
+                        @if (!string.IsNullOrEmpty(previewImageUrl))
                         {
                             <div class="mt-3 w-24 h-24 rounded-full overflow-hidden border border-[#E6E0DD] mx-auto">
-                                <img src="@activeLeader.ImageUrl" alt="Preview" class="w-full h-full object-cover" />
+                                <img src="@previewImageUrl" alt="Preview" class="w-full h-full object-cover" />
                             </div>
                         }
                     </div>
@@ -209,20 +212,70 @@
 @code {
     private string sectionSubtitle = "BOARD OF DIRECTORS";
     private string sectionTitle = "Meet Our Leadership";
+    private string currentLang = "en";
 
-    private List<LeaderModel> leadersList = new()
-    {
-        new LeaderModel { Id = 1, Name = "Win Htein Lin", Role = "FOUNDER", Bio = "Having worked as an Urban Development and Transport Consultant for the World Bank, I bring multiple years of professional experience in infrastructure and logistics projects.", ImageUrl = "/images/win-htein.jpg" },
-        new LeaderModel { Id = 2, Name = "Nyi Win Lwin", Role = "FOUNDER", Bio = "As a founder, I bring over a decade of international expertise spanning luxury hospitality and elite cocktail lounges, defined by an enduring passion for mixology.", ImageUrl = "/images/nyi-win.jpg" },
-        new LeaderModel { Id = 3, Name = "Win Htet Aung", Role = "CO-FOUNDER", Bio = "With over eight years of experience at Goethe-Institut Myanmar as an Event Technician and IT Assistant, I developed expertise in IT support and management.", ImageUrl = "/images/win-htet.jpg" }
-    };
+    private List<LeaderModel> leadersList = new();
 
     private bool isModalOpen = false;
     private bool isEditMode = false;
     private LeaderModel activeLeader = new();
+    private string previewImageUrl = "";
 
     private bool isDeleteModalOpen = false;
     private LeaderModel? leaderToDelete = null;
+
+    private const string BucketName = "gmbh";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+    
+        if (user.Identity is null || !user.Identity.IsAuthenticated)
+        {
+            Navigation.NavigateTo("/");
+            return;
+        }
+
+        await LoadLeadersAsync();
+    }
+
+    private async Task LoadLeadersAsync()
+    {
+        try
+        {
+            var response = await Http.GetFromJsonAsync<List<LeaderModel>>($"api/cms/leadership?lang={currentLang}");
+            if (response != null)
+            {
+                leadersList.Clear();
+                foreach (var leader in response)
+                {
+                    if (!string.IsNullOrEmpty(leader.ImageUrl) && !leader.ImageUrl.StartsWith("http"))
+                    {
+                        leader.ImageUrl = await GetImageUrlAsync(BucketName, leader.ImageUrl);
+                    }
+                    leadersList.Add(leader);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading leaders: {ex.Message}");
+        }
+    }
+    
+    private async Task<string> GetImageUrlAsync(string bucketName, string key)
+    {
+        try
+        {
+            var response = await Http.GetFromJsonAsync<PresignedUrlResponseModel>($"api/cms/media/presigned-url?bucketName={bucketName}&key={key}");
+            return response?.PresignedUrl ?? string.Empty;
+        }
+        catch
+        {
+            return string.Empty;
+        }
+    }
 
     private void GoBack()
     {
@@ -233,10 +286,11 @@
     {
         isEditMode = false;
         activeLeader = new LeaderModel();
+        previewImageUrl = "";
         isModalOpen = true;
     }
 
-    private void OpenEditModal(LeaderModel leader)
+    private async Task OpenEditModal(LeaderModel leader)
     {
         isEditMode = true;
         activeLeader = new LeaderModel
@@ -247,6 +301,7 @@
             Bio = leader.Bio,
             ImageUrl = leader.ImageUrl
         };
+        previewImageUrl = leader.ImageUrl;
         isModalOpen = true;
     }
 
@@ -260,30 +315,54 @@
         var file = e.File;
         if (file != null)
         {
-            var format = file.ContentType;
-            var buffer = new byte[file.Size];
-            await file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024).ReadAsync(buffer);
-            activeLeader.ImageUrl = $"data:{format};base64,{Convert.ToBase64String(buffer)}";
+            try
+            {
+                using var content = new MultipartFormDataContent();
+                var fileStream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
+                var streamContent = new StreamContent(fileStream);
+                streamContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+
+                content.Add(streamContent, "file", file.Name);
+
+                var response = await Http.PostAsync($"api/cms/media/upload?bucketName={BucketName}", content);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = await response.Content.ReadFromJsonAsync<UploadResponseModel>();
+                
+                    if (result != null)
+                    {
+                        activeLeader.ImageUrl = result.FileName; 
+                        previewImageUrl = await GetImageUrlAsync(BucketName, result.FileName); 
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
         }
     }
 
-    private void SaveLeader()
+    private async Task SaveLeader()
     {
+        // If image was changed via upload, activeLeader.ImageUrl holds the file key. 
+        // If left unchanged during edit, ensure it keeps the relative file key instead of full presigned URL if needed.
         if (isEditMode)
         {
-            var existing = leadersList.FirstOrDefault(l => l.Id == activeLeader.Id);
-            if (existing != null)
+            var response = await Http.PutAsJsonAsync($"api/cms/leadership/{activeLeader.Id}", activeLeader);
+            if (response.IsSuccessStatusCode)
             {
-                existing.Name = activeLeader.Name;
-                existing.Role = activeLeader.Role;
-                existing.Bio = activeLeader.Bio;
-                existing.ImageUrl = activeLeader.ImageUrl;
+                await LoadLeadersAsync();
             }
         }
         else
         {
-            activeLeader.Id = leadersList.Any() ? leadersList.Max(l => l.Id) + 1 : 1;
-            leadersList.Add(activeLeader);
+            var response = await Http.PostAsJsonAsync($"api/cms/leadership?lang={currentLang}", activeLeader);
+            if (response.IsSuccessStatusCode)
+            {
+                await LoadLeadersAsync();
+            }
         }
         isModalOpen = false;
     }
@@ -300,11 +379,15 @@
         leaderToDelete = null;
     }
 
-    private void ConfirmDelete()
+    private async Task ConfirmDelete()
     {
         if (leaderToDelete != null)
         {
-            leadersList.Remove(leaderToDelete);
+            var response = await Http.DeleteAsync($"api/cms/leadership/{leaderToDelete.Id}");
+            if (response.IsSuccessStatusCode)
+            {
+                leadersList.Remove(leaderToDelete);
+            }
         }
         CloseDeleteModal();
     }
@@ -316,5 +399,17 @@
         public string Role { get; set; } = "";
         public string Bio { get; set; } = "";
         public string ImageUrl { get; set; } = "";
+    }
+
+    public class UploadResponseModel
+    {
+        public string Message { get; set; } = "";
+        public string ETag { get; set; } = "";
+        public string FileName { get; set; } = "";
+    }
+
+    public class PresignedUrlResponseModel
+    {
+        public string PresignedUrl { get; set; } = "";
     }
 }
