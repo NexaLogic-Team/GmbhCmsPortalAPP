@@ -1,15 +1,26 @@
-﻿<CascadingAuthenticationState>
+﻿<!-- App.razor -->
+<CascadingAuthenticationState>
     <Router AppAssembly="@typeof(Program).Assembly">
         <Found Context="routeData">
-            <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+            <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
+                <NotAuthorized>
+                    @if (context.User.Identity?.IsAuthenticated == false)
+                    {
+                        <!-- Login မဝင်ထားရင် Login/Root Page ဆီ redirection ခေါ်ပါ -->
+                        <RedirectToLogin />
+                    }
+                    else
+                    {
+                        <p>You are not authorized to access this page.</p>
+                    }
+                </NotAuthorized>
+            </AuthorizeRouteView>
             <FocusOnNavigate RouteData="@routeData" Selector="h1" />
         </Found>
-        <NotFound>
+        <NotFound>  
             <LayoutView Layout="@typeof(MainLayout)">
                 <p>Sorry, there's nothing at this address.</p>
             </LayoutView>
         </NotFound>
     </Router>
 </CascadingAuthenticationState>
-
-@inject NavigationManager Navigation
