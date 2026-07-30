@@ -12,9 +12,9 @@ builder.Services.AddRazorComponents()
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie();
 
-builder.Services.AddScoped(sp => new HttpClient 
-{ 
-    BaseAddress = new Uri(builder.Configuration["ApiSettings:BaseUrl"] ?? "https://localhost:7123/") 
+builder.Services.AddScoped(sp => new HttpClient
+{
+    BaseAddress = new Uri(builder.Configuration["ApiSettings:BaseUrl"] ?? "https://localhost:7123/")
 });
 
 builder.Services.AddHttpContextAccessor();
@@ -27,7 +27,7 @@ builder.Services.AddHttpClient("AuthorizedClient", client =>
     var baseUrl = builder.Configuration["ApiSettings:BaseUrl"] ?? "https://localhost:7123/";
     client.BaseAddress = new Uri(baseUrl);
 });
-    // .AddHttpMessageHandler<CustomAuthorizationMessageHandler>();
+// .AddHttpMessageHandler<CustomAuthorizationMessageHandler>();
 
 builder.Services.AddScoped<AuthenticationStateProvider, CustomJwtAuthenticationStateProvider>();
 
@@ -51,7 +51,7 @@ app.UseRouting();
 
 app.UseAntiforgery();
 
-app.UseAuthentication(); 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapStaticAssets();

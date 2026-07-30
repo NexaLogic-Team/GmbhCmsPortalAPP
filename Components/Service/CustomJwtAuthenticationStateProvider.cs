@@ -10,7 +10,7 @@ public class CustomJwtAuthenticationStateProvider : AuthenticationStateProvider
     private readonly IJSRuntime _jsRuntime;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private ClaimsPrincipal _cachedUser = new(new ClaimsIdentity());
-    
+
     public CustomJwtAuthenticationStateProvider(IJSRuntime jsRuntime, IHttpContextAccessor httpContextAccessor)
     {
         _jsRuntime = jsRuntime;
@@ -48,7 +48,7 @@ public class CustomJwtAuthenticationStateProvider : AuthenticationStateProvider
 
         return new AuthenticationState(_cachedUser);
     }
-    
+
     public void NotifyUserAuthentication(string token)
     {
         var claims = ParseClaimsFromJwt(token);
