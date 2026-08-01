@@ -3,6 +3,7 @@ using GmbhCmsPortalApp.Components;
 using GmbhCmsPortalApp.Components.Service;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Http.Features;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,6 +33,17 @@ builder.Services.AddHttpClient("AuthorizedClient", client =>
 builder.Services.AddScoped<AuthenticationStateProvider, CustomJwtAuthenticationStateProvider>();
 
 builder.Services.AddAuthorizationCore();
+
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.Limits.MaxRequestBodySize = 50 * 1024 * 1024; // 20 MB
+});
+
+// 2. Form Multipart Limit (20MB)
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 50 * 1024 * 1024; // 20 MB
+});
 
 var app = builder.Build();
 

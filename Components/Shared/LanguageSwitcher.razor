@@ -1,0 +1,36 @@
+<div class="inline-flex bg-[#E6E0DD]/60 p-1 rounded-md gap-1">
+    <button type="button" 
+            @onclick='() => ChangeLanguage("en")'
+            class="px-3 py-1.5 text-xs font-medium rounded transition flex items-center gap-1.5 @(CurrentLanguage == "en" ? "bg-[#5C1D24] text-[#FCFBFA]" : "text-[#735A5A] hover:text-[#2D2424]")">
+        🇬🇧 English
+        @if (HasEnglishData)
+        {
+            <span class="w-1.5 h-1.5 rounded-full bg-green-500" title="English Content Available"></span>
+        }
+    </button>
+    <button type="button" 
+            @onclick='() => ChangeLanguage("de")'
+            class="px-3 py-1.5 text-xs font-medium rounded transition flex items-center gap-1.5 @(CurrentLanguage == "de" ? "bg-[#5C1D24] text-[#FCFBFA]" : "text-[#735A5A] hover:text-[#2D2424]")">
+        🇩🇪 German
+        @if (HasGermanData)
+        {
+            <span class="w-1.5 h-1.5 rounded-full bg-green-500" title="German Content Available"></span>
+        }
+    </button>
+</div>
+
+@code {
+    [Parameter] public string CurrentLanguage { get; set; } = "en";
+    [Parameter] public EventCallback<string> CurrentLanguageChanged { get; set; }
+    [Parameter] public bool HasEnglishData { get; set; } = true;
+    [Parameter] public bool HasGermanData { get; set; } = false;
+
+    private async Task ChangeLanguage(string lang)
+    {
+        if (CurrentLanguage != lang)
+        {
+            CurrentLanguage = lang;
+            await CurrentLanguageChanged.InvokeAsync(lang);
+        }
+    }
+}
