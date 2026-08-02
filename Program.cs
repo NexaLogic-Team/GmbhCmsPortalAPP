@@ -32,6 +32,8 @@ builder.Services.AddHttpClient("AuthorizedClient", client =>
 
 builder.Services.AddScoped<AuthenticationStateProvider, CustomJwtAuthenticationStateProvider>();
 
+builder.Services.AddScoped<UserProfileState>();
+
 builder.Services.AddAuthorizationCore();
 
 builder.WebHost.ConfigureKestrel(options =>

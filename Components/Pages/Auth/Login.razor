@@ -7,6 +7,8 @@
 @inject NavigationManager Navigation
 @inject AuthenticationStateProvider AuthStateProvider
 @inject IJSRuntime JSRuntime
+@inject UserProfileState ProfileState
+
 
 <head>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -118,60 +120,129 @@
     private string? error;
     private bool isLoading = false;
 
+    // private async Task HandleLogin()
+    // {
+    //     isLoading = true;
+    //     error = null;
+    //
+    //     try
+    //     {
+    //         var response = await Http.PostAsJsonAsync("api/cms/auth/login", loginModel);
+    //
+    //         if (response.IsSuccessStatusCode)
+    //         {
+    //             var result = await response.Content.ReadFromJsonAsync<TokenResponseDto>();
+    //             if (result != null && !string.IsNullOrEmpty(result.Token))
+    //             {
+    //                 // ၁။ LocalStorage ထဲ Token သိမ်းပါ
+    //                 await JSRuntime.InvokeVoidAsync("localStorage.setItem", "authToken", result.Token);
+    //
+    //                 // ၂။ Auth State Provider ကို Notify လုပ်ပါ
+    //                 if (AuthStateProvider is CustomJwtAuthenticationStateProvider customAuthProv)
+    //                 {
+    //                     customAuthProv.NotifyUserAuthentication(result.Token);
+    //                 }
+    //
+    //                 // 🔑 ၃။ အရေးကြီးဆုံးအချက်: Profile API ခေါ်နိုင်ဖို့ Http Header မှာ Token အရင် တပ်ဆင်ပါ
+    //                 Http.DefaultRequestHeaders.Authorization =
+    //                     new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", result.Token);
+    //
+    //                 // ၄။ Token ရပြီးမှ Profile ကို Sync ခေါ်ယူပြီး Cache ထဲ ထည့်ပါ
+    //                 await ProfileState.InitializeAsync(forceRefresh: true);
+    //
+    //                 // ၅။ Data ရပြီးမှ Dashboard သို့ သွားပါ
+    //                 Navigation.NavigateTo("/cms/dashboard");
+    //                 return;
+    //             }
+    //         }
+    //
+    //         if (!response.IsSuccessStatusCode)
+    //         {
+    //             var errorResponseBody = await response.Content.ReadAsStringAsync();
+    //             Console.WriteLine($"API Error: {errorResponseBody}");
+    //         }
+    //
+    //         error = "Invalid email or password. Please check your credentials and try again.";
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         Console.WriteLine($"Exception: {ex.Message}");
+    //         error = "Unable to connect to the server. Please check your connection and try again.";
+    //     }
+    //     finally
+    //     {
+    //         isLoading = false;
+    //     }
+    // }
+
     private async Task HandleLogin()
+{
+    isLoading = true;
+    error = null;
+
+    try
     {
-        isLoading = true;
-        error = null;
+        var response = await Http.PostAsJsonAsync("api/cms/auth/login", loginModel);
 
-        try
+        if (response.IsSuccessStatusCode)
         {
-            var response = await Http.PostAsJsonAsync("api/cms/auth/login", loginModel);
-
-            if (response.IsSuccessStatusCode)
+            var result = await response.Content.ReadFromJsonAsync<TokenResponseDto>();
+            if (result != null && !string.IsNullOrEmpty(result.Token))
             {
-                var result = await response.Content.ReadFromJsonAsync<TokenResponseDto>();
-                if (result != null && !string.IsNullOrEmpty(result.Token))
+                // 1. JWT Token သိမ်းမည်
+                await JSRuntime.InvokeVoidAsync("localStorage.setItem", "authToken", result.Token);
+
+                // 2. Auth State Notify လုပ်မည်
+                if (AuthStateProvider is CustomJwtAuthenticationStateProvider customAuthProv)
                 {
-                    await JSRuntime.InvokeVoidAsync("localStorage.setItem", "authToken", result.Token);
-
-                    if (AuthStateProvider is CustomJwtAuthenticationStateProvider customAuthProv)
-                    {
-                        customAuthProv.NotifyUserAuthentication(result.Token);
-                    }
-
-                    Navigation.NavigateTo("/cms/dashboard");
-                    return;
+                    customAuthProv.NotifyUserAuthentication(result.Token);
                 }
-            }
 
-            if (!response.IsSuccessStatusCode)
-            {
-                // Backend က ပြန်လိုက်တဲ့ Error အသေးစိတ်ကို ဖတ်မည်
-                var errorResponseBody = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"API Error: {errorResponseBody}");
+                // 3. Http Header တွင် Token တပ်ဆင်မည်
+                Http.DefaultRequestHeaders.Authorization =
+                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", result.Token);
+
+                // 4. Profile Data ကို အရင် Fetch လုပ်မည်
+                await ProfileState.InitializeAsync(forceRefresh: true);
+
+                // 🔑 5. Presigned URL ရလာပါက Browser Cache ထဲ ရောက်အောင် တန်းပြီး Image Preload လုပ်မည်
+                if (!string.IsNullOrEmpty(ProfileState.Profile?.ProfileImage))
+                {
+                    try
+                    {
+                        await JSRuntime.InvokeVoidAsync("eval", $"new Image().src = '{ProfileState.Profile.ProfileImage}';");
+                    }
+                    catch
+                    {
+                        // Image Preload Fail ဖြစ်သွားခဲ့ရင်လည်း Flow ကို ဆက်သွားမည်
+                    }
+                }
+
+                // 6. Data & Image ရပြီဆိုမှ Dashboard သို့ သွားမည်
+                Navigation.NavigateTo("/cms/dashboard");
+                return;
             }
-            
-            error = "Invalid email or password. Please check your credentials and try again.";
         }
-        catch (Exception)
-        {
-            error = "Unable to connect to the server. Please check your connection and try again.";
-        }
-        finally
-        {
-            isLoading = false;
-        }
+
+        error = "Invalid email or password. Please check your credentials and try again.";
     }
-
+    catch (Exception)
+    {
+        error = "Unable to connect to the server. Please check your connection and try again.";
+    }
+    finally
+    {
+        isLoading = false;
+    }
+}
+    
     public class LoginDto
     {
-        [JsonPropertyName("email")]
-        public string Email { get; set; } = string.Empty;
+        [JsonPropertyName("email")] public string Email { get; set; } = string.Empty;
 
-        [JsonPropertyName("password")]
-        public string Password { get; set; } = string.Empty;
+        [JsonPropertyName("password")] public string Password { get; set; } = string.Empty;
     }
-    
+
     public class TokenResponseDto
     {
         public string Token { get; set; } = string.Empty;
