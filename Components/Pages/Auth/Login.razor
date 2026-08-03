@@ -120,61 +120,6 @@
     private string? error;
     private bool isLoading = false;
 
-    // private async Task HandleLogin()
-    // {
-    //     isLoading = true;
-    //     error = null;
-    //
-    //     try
-    //     {
-    //         var response = await Http.PostAsJsonAsync("api/cms/auth/login", loginModel);
-    //
-    //         if (response.IsSuccessStatusCode)
-    //         {
-    //             var result = await response.Content.ReadFromJsonAsync<TokenResponseDto>();
-    //             if (result != null && !string.IsNullOrEmpty(result.Token))
-    //             {
-    //                 // ၁။ LocalStorage ထဲ Token သိမ်းပါ
-    //                 await JSRuntime.InvokeVoidAsync("localStorage.setItem", "authToken", result.Token);
-    //
-    //                 // ၂။ Auth State Provider ကို Notify လုပ်ပါ
-    //                 if (AuthStateProvider is CustomJwtAuthenticationStateProvider customAuthProv)
-    //                 {
-    //                     customAuthProv.NotifyUserAuthentication(result.Token);
-    //                 }
-    //
-    //                 // 🔑 ၃။ အရေးကြီးဆုံးအချက်: Profile API ခေါ်နိုင်ဖို့ Http Header မှာ Token အရင် တပ်ဆင်ပါ
-    //                 Http.DefaultRequestHeaders.Authorization =
-    //                     new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", result.Token);
-    //
-    //                 // ၄။ Token ရပြီးမှ Profile ကို Sync ခေါ်ယူပြီး Cache ထဲ ထည့်ပါ
-    //                 await ProfileState.InitializeAsync(forceRefresh: true);
-    //
-    //                 // ၅။ Data ရပြီးမှ Dashboard သို့ သွားပါ
-    //                 Navigation.NavigateTo("/cms/dashboard");
-    //                 return;
-    //             }
-    //         }
-    //
-    //         if (!response.IsSuccessStatusCode)
-    //         {
-    //             var errorResponseBody = await response.Content.ReadAsStringAsync();
-    //             Console.WriteLine($"API Error: {errorResponseBody}");
-    //         }
-    //
-    //         error = "Invalid email or password. Please check your credentials and try again.";
-    //     }
-    //     catch (Exception ex)
-    //     {
-    //         Console.WriteLine($"Exception: {ex.Message}");
-    //         error = "Unable to connect to the server. Please check your connection and try again.";
-    //     }
-    //     finally
-    //     {
-    //         isLoading = false;
-    //     }
-    // }
-
     private async Task HandleLogin()
 {
     isLoading = true;

@@ -569,7 +569,6 @@
 
     private async Task CloseModal()
     {
-        // Upload တင်ထားခဲ့ပြီး Save မလုပ်ခဲ့လျှင် R2 ပေါ်က တင်ခဲ့သော ပုံအသစ်ကို ပြန်ဖျက်မည်
         if (!string.IsNullOrEmpty(createModel.ImageUrl) && createModel.ImageUrl != initialImageUrl)
         {
             await DeleteUploadedImageAsync(createModel.ImageUrl);

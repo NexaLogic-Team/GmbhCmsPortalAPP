@@ -31,11 +31,18 @@ public class UserProfileState
 
         try
         {
-            // 🔧 Route ကို api/cms/auth/profile ဟု ပြင်ပေးလိုက်ပါ
-            var data = await _http.GetFromJsonAsync<UserProfileDto>("api/cms/auth/profile");
-            if (data != null)
+            var response = await _http.GetAsync("api/cms/auth/profile");
+
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
             {
-                Profile = data;
+                // Normal behavior on login screen - swallow or log gracefully
+                Profile = null;
+                return;
+            }
+
+            if (response.IsSuccessStatusCode)
+            {
+                Profile = await response.Content.ReadFromJsonAsync<UserProfileDto>();
                 NotifyStateChanged();
             }
         }
