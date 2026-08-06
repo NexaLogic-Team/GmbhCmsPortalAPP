@@ -1,11 +1,13 @@
 @page "/cms/edit-about"
 @layout MainLayout
-@attribute [Authorize(Roles = "GmbHAdmin2026")]
+@attribute [Authorize]
+@inject HttpClient Http
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
 
+<div class="max-w-4xl mx-auto space-y-6 relative pb-12">
 
-<div class="max-w-4xl mx-auto space-y-6 relative">
-
-    <!-- Success / Error Notification Banner -->
+    <!-- Notification Banner -->
     @if (showNotification)
     {
         <div class="transition-all duration-300 flex items-center justify-between p-4 rounded-md border text-xs font-medium shadow-sm @(notificationType == "success" ? "bg-[#5C1D24]/10 border-[#5C1D24]/30 text-[#5C1D24]" : "bg-red-50 border-red-200 text-red-700")">
@@ -26,17 +28,14 @@
         </div>
     }
 
-    <!-- Page Header & Language Switcher -->
+    <!-- Header Section -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#E6E0DD] pb-6 gap-4">
         <div class="flex items-center space-x-4">
-            <!-- Back Button -->
             <button @onclick="GoBack"
                     class="bg-white border border-[#D9D0CC] hover:bg-[#F5EFEE] text-[#5C1D24] p-2 rounded-md transition cursor-pointer flex items-center justify-center"
                     title="Back">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                     stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
                 </svg>
             </button>
             <div>
@@ -50,9 +49,9 @@
         </div>
 
         <div class="flex items-center gap-4">
-            <!-- Language Selector Tabs with Completion Status Indicator -->
+            <!-- Language Switcher -->
             <div class="inline-flex bg-[#E6E0DD]/60 p-1 rounded-md gap-1">
-                <button type="button" 
+                <button type="button"
                         @onclick='() => currentLang = "en"'
                         class="px-3 py-1.5 text-xs font-medium rounded transition flex items-center gap-1.5 @(currentLang == "en" ? "bg-[#5C1D24] text-[#FCFBFA]" : "text-[#735A5A] hover:text-[#2D2424]")">
                     🇬🇧 English
@@ -61,7 +60,7 @@
                         <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
                     }
                 </button>
-                <button type="button" 
+                <button type="button"
                         @onclick='() => currentLang = "de"'
                         class="px-3 py-1.5 text-xs font-medium rounded transition flex items-center gap-1.5 @(currentLang == "de" ? "bg-[#5C1D24] text-[#FCFBFA]" : "text-[#735A5A] hover:text-[#2D2424]")">
                     🇩🇪 German
@@ -74,178 +73,217 @@
 
             <button @onclick="HandleSave" 
                     disabled="@isLoading"
-                    class="bg-[#5C1D24] hover:bg-[#4A171D] text-[#FCFBFA] px-6 py-2.5 text-xs uppercase font-medium rounded-md transition cursor-pointer disabled:opacity-50">
-                @if (isLoading) { <span>Saving...</span> } else { <span>Save Changes</span> }
+                    class="bg-[#5C1D24] hover:bg-[#4A171D] text-[#FCFBFA] px-6 py-2.5 text-xs uppercase font-medium rounded-md transition cursor-pointer disabled:opacity-50 flex items-center gap-2">
+                @if (isLoading)
+                {
+                    <div class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>Saving...</span>
+                }
+                else
+                {
+                    <span>Save Changes</span>
+                }
             </button>
         </div>
     </div>
 
-    <!-- Edit Form Card Container -->
+    <!-- Form Container -->
     <div class="bg-[#FCFBFA] border border-[#E6E0DD] rounded-lg p-8 shadow-sm relative overflow-hidden">
         
-        <!-- Loading Overlay -->
-        @if (isLoading)
+        @if (isFetching)
         {
-            <div class="absolute inset-0 bg-[#FCFBFA]/90 backdrop-blur-[2px] z-50 flex flex-col items-center justify-center space-y-3">
+            <div class="flex flex-col items-center justify-center py-12 space-y-3">
                 <div class="w-8 h-8 border-3 border-[#E6E0DD] border-t-[#5C1D24] rounded-full animate-spin"></div>
-                <span class="text-xs font-medium uppercase text-[#5C1D24] tracking-wider">
-                    Updating content...
-                </span>
+                <span class="text-xs font-medium uppercase text-[#5C1D24] tracking-wider">Loading content...</span>
             </div>
         }
+        else
+        {
+            <EditForm Model="aboutModel" OnValidSubmit="HandleSave">
+                <div class="space-y-6">
 
-        <EditForm Model="aboutModel" OnValidSubmit="HandleSave">
-            <div class="space-y-6">
+                    <!-- Reminder Banner -->
+                    <div class="bg-[#5C1D24]/10 border border-[#5C1D24]/20 p-3 rounded-md text-xs text-[#5C1D24] font-medium flex justify-between items-center">
+                        <span>You are editing: <strong class="uppercase">@(currentLang == "en" ? "English (EN)" : "German (DE)")</strong>. Check both tabs before saving!</span>
+                        <button type="button" @onclick="SwitchLanguage" class="underline font-bold hover:opacity-80 cursor-pointer">
+                            Switch to @(currentLang == "en" ? "German 🇩🇪" : "English 🇬🇧") ➔
+                        </button>
+                    </div>
 
-                <!-- Reminder Banner -->
-                <div class="bg-[#5C1D24]/10 border border-[#5C1D24]/20 p-3 rounded-md text-xs text-[#5C1D24] font-medium flex justify-between items-center">
-                    <span>You are editing: <strong class="uppercase">@(currentLang == "en" ? "English (EN)" : "German (DE)")</strong>. Remember to check both tabs before saving!</span>
-                    <button type="button" @onclick="SwitchLanguage" class="underline font-bold hover:opacity-80 cursor-pointer">
-                        Switch to @(currentLang == "en" ? "German 🇩🇪" : "English 🇬🇧") ➔
-                    </button>
+                    <!-- Subtitle -->
+                    <div>
+                        <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-2">
+                            Section Subtitle (@(currentLang.ToUpper())) (e.g., OUR HERITAGE)
+                        </label>
+                        @if (currentLang == "en")
+                        {
+                            <InputText @bind-Value="aboutModel.SubTitleEn" class="w-full bg-white border border-[#D9D0CC] px-3.5 py-3 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
+                        }
+                        else
+                        {
+                            <InputText @bind-Value="aboutModel.SubTitleDe" class="w-full bg-white border border-[#D9D0CC] px-3.5 py-3 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
+                        }
+                    </div>
+
+                    <!-- Main Heading -->
+                    <div>
+                        <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-2">
+                            Main Heading (Title) (@(currentLang.ToUpper()))
+                        </label>
+                        @if (currentLang == "en")
+                        {
+                            <InputText @bind-Value="aboutModel.MainTitleEn" class="w-full bg-white border border-[#D9D0CC] px-3.5 py-3 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
+                        }
+                        else
+                        {
+                            <InputText @bind-Value="aboutModel.MainTitleDe" class="w-full bg-white border border-[#D9D0CC] px-3.5 py-3 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
+                        }
+                    </div>
+
+                    <!-- Paragraph 1 -->
+                    <div>
+                        <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-2">
+                            Highlight Paragraph (Italic / Styled) (@(currentLang.ToUpper()))
+                        </label>
+                        @if (currentLang == "en")
+                        {
+                            <InputTextArea @bind-Value="aboutModel.Paragraph1En" rows="3" class="w-full bg-white border border-[#D9D0CC] px-3.5 py-3 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
+                        }
+                        else
+                        {
+                            <InputTextArea @bind-Value="aboutModel.Paragraph1De" rows="3" class="w-full bg-white border border-[#D9D0CC] px-3.5 py-3 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
+                        }
+                    </div>
+
+                    <!-- Paragraph 2 -->
+                    <div>
+                        <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-2">
+                            Description Paragraph 2 (@(currentLang.ToUpper()))
+                        </label>
+                        @if (currentLang == "en")
+                        {
+                            <InputTextArea @bind-Value="aboutModel.Paragraph2En" rows="3" class="w-full bg-white border border-[#D9D0CC] px-3.5 py-3 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
+                        }
+                        else
+                        {
+                            <InputTextArea @bind-Value="aboutModel.Paragraph2De" rows="3" class="w-full bg-white border border-[#D9D0CC] px-3.5 py-3 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
+                        }
+                    </div>
+
+                    <!-- Paragraph 3 -->
+                    <div>
+                        <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-2">
+                            Description Paragraph 3 (@(currentLang.ToUpper()))
+                        </label>
+                        @if (currentLang == "en")
+                        {
+                            <InputTextArea @bind-Value="aboutModel.Paragraph3En" rows="3" class="w-full bg-white border border-[#D9D0CC] px-3.5 py-3 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
+                        }
+                        else
+                        {
+                            <InputTextArea @bind-Value="aboutModel.Paragraph3De" rows="3" class="w-full bg-white border border-[#D9D0CC] px-3.5 py-3 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
+                        }
+                    </div>
+
+                    <!-- Paragraph 4 -->
+                    <div>
+                        <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-2">
+                            Description Paragraph 4 (@(currentLang.ToUpper()))
+                        </label>
+                        @if (currentLang == "en")
+                        {
+                            <InputTextArea @bind-Value="aboutModel.Paragraph4En" rows="3" class="w-full bg-white border border-[#D9D0CC] px-3.5 py-3 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
+                        }
+                        else
+                        {
+                            <InputTextArea @bind-Value="aboutModel.Paragraph4De" rows="3" class="w-full bg-white border border-[#D9D0CC] px-3.5 py-3 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
+                        }
+                    </div>
+
+                    <!-- Image Upload & Preview Section -->
+                    <div class="pt-6 border-t border-[#E6E0DD] space-y-4">
+                        <label class="block text-xs uppercase font-medium text-[#5C4D4D]">
+                            About Section Image (Logo / Graphic)
+                        </label>
+
+                        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-6">
+                            @if (!string.IsNullOrWhiteSpace(imagePreviewUrl))
+                            {
+                                <div class="relative group w-36 h-36 bg-[#F5EFEE] border border-[#D9D0CC] rounded-lg overflow-hidden flex items-center justify-center p-2">
+                                    <img src="@imagePreviewUrl" alt="About Section Image" class="max-w-full max-h-full object-contain" />
+                                    <button type="button" @onclick="RemoveImage" 
+                                            class="absolute top-2 right-2 bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow cursor-pointer">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                    </button>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="w-36 h-36 border-2 border-dashed border-[#D9D0CC] rounded-lg flex flex-col items-center justify-center bg-[#F8F6F5] text-[#735A5A]">
+                                    <svg class="w-8 h-8 mb-1 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 002-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                    <span class="text-[10px] uppercase font-semibold">No Image</span>
+                                </div>
+                            }
+
+                            <div class="space-y-2 flex-1">
+                                <InputFile OnChange="HandleFileSelection" accept="image/*" id="fileUploadInput" class="hidden" />
+                                <label for="fileUploadInput" class="inline-flex items-center gap-2 bg-white border border-[#D9D0CC] hover:bg-[#F5EFEE] text-[#5C1D24] px-4 py-2 rounded-md text-xs font-semibold uppercase transition cursor-pointer">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                                    Upload New Image
+                                </label>
+                                @if (isUploading)
+                                {
+                                    <span class="text-xs text-[#5C1D24] font-medium block animate-pulse">Uploading file to Cloud storage...</span>
+                                }
+                                <p class="text-[11px] text-[#735A5A]">Supported formats: PNG, JPG, WEBP, SVG (Max size: 10MB)</p>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
-
-                <!-- Section Subtitle / Tag -->
-                <div>
-                    <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-2 tracking-normal">
-                        Section Subtitle (@(currentLang.ToUpper())) (e.g., OUR HERITAGE)
-                    </label>
-                    @if (currentLang == "en")
-                    {
-                        <InputText @bind-Value="aboutModel.SubTitleEn"
-                                   class="w-full bg-white border border-[#D9D0CC] px-3.5 py-3 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
-                    }
-                    else
-                    {
-                        <InputText @bind-Value="aboutModel.SubTitleDe"
-                                   class="w-full bg-white border border-[#D9D0CC] px-3.5 py-3 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
-                    }
-                </div>
-
-                <!-- Main Heading -->
-                <div>
-                    <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-2 tracking-normal">
-                        Main Heading (Title) (@(currentLang.ToUpper()))
-                    </label>
-                    @if (currentLang == "en")
-                    {
-                        <InputText @bind-Value="aboutModel.MainTitleEn"
-                                   class="w-full bg-white border border-[#D9D0CC] px-3.5 py-3 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
-                    }
-                    else
-                    {
-                        <InputText @bind-Value="aboutModel.MainTitleDe"
-                                   class="w-full bg-white border border-[#D9D0CC] px-3.5 py-3 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
-                    }
-                </div>
-
-                <!-- Highlight Paragraph (Paragraph 1) -->
-                <div>
-                    <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-2 tracking-normal">
-                        Highlight Paragraph (Italic / Styled) (@(currentLang.ToUpper()))
-                    </label>
-                    @if (currentLang == "en")
-                    {
-                        <InputTextArea @bind-Value="aboutModel.Paragraph1En" rows="3"
-                                       class="w-full bg-white border border-[#D9D0CC] px-3.5 py-3 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
-                    }
-                    else
-                    {
-                        <InputTextArea @bind-Value="aboutModel.Paragraph1De" rows="3"
-                                       class="w-full bg-white border border-[#D9D0CC] px-3.5 py-3 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
-                    }
-                </div>
-
-                <!-- Description Paragraph 2 -->
-                <div>
-                    <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-2 tracking-normal">
-                        Description Paragraph 2 (@(currentLang.ToUpper()))
-                    </label>
-                    @if (currentLang == "en")
-                    {
-                        <InputTextArea @bind-Value="aboutModel.Paragraph2En" rows="3"
-                                       class="w-full bg-white border border-[#D9D0CC] px-3.5 py-3 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
-                    }
-                    else
-                    {
-                        <InputTextArea @bind-Value="aboutModel.Paragraph2De" rows="3"
-                                       class="w-full bg-white border border-[#D9D0CC] px-3.5 py-3 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
-                    }
-                </div>
-
-                <!-- Description Paragraph 3 -->
-                <div>
-                    <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-2 tracking-normal">
-                        Description Paragraph 3 (@(currentLang.ToUpper()))
-                    </label>
-                    @if (currentLang == "en")
-                    {
-                        <InputTextArea @bind-Value="aboutModel.Paragraph3En" rows="3"
-                                       class="w-full bg-white border border-[#D9D0CC] px-3.5 py-3 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
-                    }
-                    else
-                    {
-                        <InputTextArea @bind-Value="aboutModel.Paragraph3De" rows="3"
-                                       class="w-full bg-white border border-[#D9D0CC] px-3.5 py-3 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
-                    }
-                </div>
-
-                <!-- Description Paragraph 4 -->
-                <div>
-                    <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-2 tracking-normal">
-                        Description Paragraph 4 (@(currentLang.ToUpper()))
-                    </label>
-                    @if (currentLang == "en")
-                    {
-                        <InputTextArea @bind-Value="aboutModel.Paragraph4En" rows="3"
-                                       class="w-full bg-white border border-[#D9D0CC] px-3.5 py-3 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
-                    }
-                    else
-                    {
-                        <InputTextArea @bind-Value="aboutModel.Paragraph4De" rows="3"
-                                       class="w-full bg-white border border-[#D9D0CC] px-3.5 py-3 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
-                    }
-                </div>
-
-                <!-- About Image Upload & Preview Section -->
-                <div class="pt-4 border-t border-[#E6E0DD]">
-                    <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-2 tracking-normal">
-                        About Section Image (Logo / Graphic)
-                    </label>
-                    <!-- Image upload components can go here -->
-                </div>
-
-            </div>
-        </EditForm>
+            </EditForm>
+        }
     </div>
-
 </div>
 
 @code {
     private string currentLang = "en";
+    private bool isFetching = true;
     private bool isLoading = false;
+    private bool isUploading = false;
     private bool showNotification = false;
     private string notificationMessage = "";
     private string notificationType = "success";
 
-    private AboutSectionModel aboutModel = new()
-    {
-        SubTitleEn = "OUR HERITAGE",
-        SubTitleDe = "UNSERE TRADITION",
-        MainTitleEn = "About Us",
-        MainTitleDe = "Über uns",
-        Paragraph1En = "Irrawaddy GmbH is a Munich-based company dedicated to creating business opportunities between Germany and Myanmar.",
-        Paragraph1De = "Die Irrawaddy GmbH ist ein in München ansässiges Unternehmen...",
-        Paragraph2En = "We offer personalized and tailor-made consulting services to businesses, entrepreneurs, students, and organizations...",
-        Paragraph2De = "Wir bieten maßgeschneiderte Beratungsdienstleistungen für Unternehmen, Unternehmer, Studenten...",
-        Paragraph3En = "The company also focuses on strategic investments in the restaurant and hospitality industry...",
-        Paragraph3De = "Das Unternehmen konzentriert sich auch auf strategische Investitionen...",
-        Paragraph4En = "With a strong commitment to quality, integrity, and long-term partnerships...",
-        Paragraph4De = "Mit einem starken Engagement für Qualität, Integrität...",
-        ImageUrl = "/images/irrawaddy-logo.png"
-    };
+    private AboutSectionModel aboutModel = new();
+    private string imagePreviewUrl = "";
 
-    private string imagePreviewUrl = "/images/irrawaddy-logo.png";
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAboutDataAsync();
+    }
+
+    private async Task LoadAboutDataAsync()
+    {
+        isFetching = true;
+        try
+        {
+            var response = await Http.GetFromJsonAsync<AboutSectionModel>("api/cms/about");
+            if (response != null)
+            {
+                aboutModel = response;
+                imagePreviewUrl = aboutModel.ImageUrl;
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowBanner($"Failed to load about section data: {ex.Message}", "error");
+        }
+        finally
+        {
+            isFetching = false;
+        }
+    }
 
     private void GoBack()
     {
@@ -260,15 +298,57 @@
     private async Task HandleFileSelection(InputFileChangeEventArgs e)
     {
         var file = e.File;
-        if (file != null)
-        {
-            var format = file.ContentType;
-            var buffer = new byte[file.Size];
-            await file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024).ReadAsync(buffer);
-            imagePreviewUrl = $"data:{format};base64,{Convert.ToBase64String(buffer)}";
+        if (file == null) return;
 
-            aboutModel.ImageUrl = file.Name;
+        isUploading = true;
+        StateHasChanged();
+
+        try
+        {
+            using var content = new MultipartFormDataContent();
+            var fileStream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
+            var streamContent = new StreamContent(fileStream);
+            streamContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+
+            content.Add(streamContent, "file", file.Name);
+
+            // MediaController /upload API သို့ Upload တင်ခြင်း
+            var response = await Http.PostAsync("api/cms/media/upload?bucketName=gmbh", content);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var uploadResult = await response.Content.ReadFromJsonAsync<UploadResponseDto>();
+                if (uploadResult != null && !string.IsNullOrWhiteSpace(uploadResult.FileName))
+                {
+                    aboutModel.ImageUrl = uploadResult.FileName;
+
+                    // Presigned URL ခေါ်ယူခြင်း
+                    var presignedRes = await Http.GetFromJsonAsync<PresignedUrlDto>($"api/cms/media/presigned-url?bucketName=gmbh&key={uploadResult.FileName}");
+                    imagePreviewUrl = presignedRes?.PresignedUrl ?? uploadResult.FileName;
+
+                    ShowBanner("Image uploaded successfully!", "success");
+                }
+            }
+            else
+            {
+                ShowBanner("Failed to upload image. Please try again.", "error");
+            }
         }
+        catch (Exception ex)
+        {
+            ShowBanner($"Image upload error: {ex.Message}", "error");
+        }
+        finally
+        {
+            isUploading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void RemoveImage()
+    {
+        aboutModel.ImageUrl = string.Empty;
+        imagePreviewUrl = string.Empty;
     }
 
     private async Task HandleSave()
@@ -279,30 +359,32 @@
 
         try
         {
-            await Task.Delay(1000); 
-
-            notificationMessage = "Changes saved successfully to the database!";
-            notificationType = "success";
-            showNotification = true;
+            var response = await Http.PutAsJsonAsync("api/cms/about", aboutModel);
+            if (response.IsSuccessStatusCode)
+            {
+                ShowBanner("About section content saved successfully!", "success");
+            }
+            else
+            {
+                ShowBanner("Failed to save content. Server returned an error.", "error");
+            }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            notificationMessage = "Failed to save changes. Please try again.";
-            notificationType = "error";
-            showNotification = true;
+            ShowBanner($"Error saving content: {ex.Message}", "error");
         }
         finally
         {
             isLoading = false;
             StateHasChanged();
-
-            _ = Task.Run(async () =>
-            {
-                await Task.Delay(4000);
-                showNotification = false;
-                await InvokeAsync(StateHasChanged);
-            });
         }
+    }
+
+    private void ShowBanner(string message, string type)
+    {
+        notificationMessage = message;
+        notificationType = type;
+        showNotification = true;
     }
 
     public class AboutSectionModel
@@ -320,5 +402,17 @@
         public string Paragraph4En { get; set; } = "";
         public string Paragraph4De { get; set; } = "";
         public string ImageUrl { get; set; } = "";
+    }
+
+    public class UploadResponseDto
+    {
+        public string Message { get; set; } = "";
+        public string ETag { get; set; } = "";
+        public string FileName { get; set; } = "";
+    }
+
+    public class PresignedUrlDto
+    {
+        public string PresignedUrl { get; set; } = "";
     }
 }

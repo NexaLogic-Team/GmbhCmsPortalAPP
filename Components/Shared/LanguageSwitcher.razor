@@ -1,20 +1,43 @@
 <div class="inline-flex bg-[#E6E0DD]/60 p-1 rounded-md gap-1">
+    <!-- English Button -->
     <button type="button" 
             @onclick='() => ChangeLanguage("en")'
-            class="px-3 py-1.5 text-xs font-medium rounded transition flex items-center gap-1.5 @(CurrentLanguage == "en" ? "bg-[#5C1D24] text-[#FCFBFA]" : "text-[#735A5A] hover:text-[#2D2424]")">
-        🇬🇧 English
+            class="px-3 py-1.5 text-xs font-medium rounded transition flex items-center justify-between gap-2 @(CurrentLanguage == "en" ? "bg-[#5C1D24] text-[#FCFBFA]" : "text-[#735A5A] hover:text-[#2D2424]")">
+        
+        <div class="flex items-center gap-1.5">
+            <!-- Active Selection Green Dot (Left Side) -->
+            @if (CurrentLanguage == "en")
+            {
+                <span class="w-2 h-2 rounded-full bg-green-500 shrink-0"></span>
+            }
+            <span>🇬🇧 English</span>
+        </div>
+
+        <!-- Data Available Indicator (Right Side) - Displays ONLY if true -->
         @if (HasEnglishData)
         {
-            <span class="w-1.5 h-1.5 rounded-full bg-green-500" title="English Content Available"></span>
+            <span class="w-1.5 h-1.5 rounded-full bg-green-400 shrink-0" title="English Content Available"></span>
         }
     </button>
+
+    <!-- German Button -->
     <button type="button" 
             @onclick='() => ChangeLanguage("de")'
-            class="px-3 py-1.5 text-xs font-medium rounded transition flex items-center gap-1.5 @(CurrentLanguage == "de" ? "bg-[#5C1D24] text-[#FCFBFA]" : "text-[#735A5A] hover:text-[#2D2424]")">
-        🇩🇪 German
+            class="px-3 py-1.5 text-xs font-medium rounded transition flex items-center justify-between gap-2 @(CurrentLanguage == "de" ? "bg-[#5C1D24] text-[#FCFBFA]" : "text-[#735A5A] hover:text-[#2D2424]")">
+        
+        <div class="flex items-center gap-1.5">
+            <!-- Active Selection Green Dot (Left Side) -->
+            @if (CurrentLanguage == "de")
+            {
+                <span class="w-2 h-2 rounded-full bg-green-500 shrink-0"></span>
+            }
+            <span>🇩🇪 German</span>
+        </div>
+
+        <!-- Data Available Indicator (Right Side) - Displays ONLY if true -->
         @if (HasGermanData)
         {
-            <span class="w-1.5 h-1.5 rounded-full bg-green-500" title="German Content Available"></span>
+            <span class="w-1.5 h-1.5 rounded-full bg-green-400 shrink-0" title="German Content Available"></span>
         }
     </button>
 </div>
@@ -22,7 +45,7 @@
 @code {
     [Parameter] public string CurrentLanguage { get; set; } = "en";
     [Parameter] public EventCallback<string> CurrentLanguageChanged { get; set; }
-    [Parameter] public bool HasEnglishData { get; set; } = true;
+    [Parameter] public bool HasEnglishData { get; set; } = false;
     [Parameter] public bool HasGermanData { get; set; } = false;
 
     private async Task ChangeLanguage(string lang)

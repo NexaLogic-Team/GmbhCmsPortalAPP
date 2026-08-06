@@ -1,0 +1,41 @@
+@if (Message != null)
+{
+    <div class="fixed top-6 right-6 z-[9999] flex items-center gap-3 px-4 py-3 rounded-lg shadow-md border text-xs font-medium transition-all duration-300 animate-fade-in bg-white border-[#E6E0DD] text-[#2D2424]">
+        @if (Type == ToastType.Success)
+        {
+            <!-- Theme primary color background for success badge -->
+            <div class="w-6 h-6 rounded-full bg-[#5C1D24]/10 text-[#5C1D24] flex items-center justify-center shrink-0">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                </svg>
+            </div>
+        }
+        else
+        {
+            <!-- Theme dark burgundy tone for error badge -->
+            <div class="w-6 h-6 rounded-full bg-rose-100 text-rose-800 flex items-center justify-center shrink-0">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </div>
+        }
+        <span class="text-[#2D2424] font-medium tracking-wide">@Message</span>
+        <button @onclick="OnDismiss" class="ml-3 text-[#735A5A] hover:text-[#5C1D24] transition cursor-pointer">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+    </div>
+}
+
+@code {
+    [Parameter] public string? Message { get; set; }
+    [Parameter] public ToastType Type { get; set; } = ToastType.Success;
+    [Parameter] public EventCallback OnDismiss { get; set; }
+
+    public enum ToastType
+    {
+        Success,
+        Error
+    }
+}

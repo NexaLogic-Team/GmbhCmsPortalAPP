@@ -1,8 +1,3 @@
-using System.Security.Claims;
-using GmbhCmsPortalApp.Components;
-using GmbhCmsPortalApp.Components.Service;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Http.Features;
 
 var builder = WebApplication.CreateBuilder(args);

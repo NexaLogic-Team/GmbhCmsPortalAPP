@@ -1,30 +1,16 @@
 @page "/cms/edit-home"
+@using GmbhCmsPortalApp.Components.Common
+@using GmbhCmsPortalApp.Components.Shared
 @layout MainLayout
-@attribute [Authorize(Roles = "GmbHAdmin2026")]
+@attribute [Authorize]
+@inject HttpClient Http
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
 
+<!-- Notification Toast System -->
+<ToastNotification Message="@toastMessage" Type="@toastType" OnDismiss="DismissToast" />
 
 <div class="max-w-4xl mx-auto space-y-6 relative">
-    
-    <!-- Success / Error Notification Banner -->
-    @if (showNotification)
-    {
-        <div class="transition-all duration-300 flex items-center justify-between p-4 rounded-md border text-xs font-medium shadow-sm @(notificationType == "success" ? "bg-[#5C1D24]/10 border-[#5C1D24]/30 text-[#5C1D24]" : "bg-red-50 border-red-200 text-red-700")">
-            <div class="flex items-center gap-2">
-                @if (notificationType == "success")
-                {
-                    <svg class="w-4 h-4 text-[#5C1D24]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
-                }
-                else
-                {
-                    <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
-                }
-                <span>@notificationMessage</span>
-            </div>
-            <button @onclick="() => showNotification = false" class="text-xs uppercase font-bold opacity-70 hover:opacity-100 cursor-pointer">
-                ✕
-            </button>
-        </div>
-    }
 
     <!-- Page Header & Language Switcher -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#E6E0DD] pb-6 gap-4">
@@ -38,62 +24,127 @@
         </div>
 
         <div class="flex items-center gap-4">
-            <!-- Language Selector Tabs with Completion Status Indicator -->
+            <!-- Language Selector -->
             <div class="inline-flex bg-[#E6E0DD]/60 p-1 rounded-md gap-1">
                 <button type="button" 
                         @onclick='() => currentLang = "en"'
                         class="px-3 py-1.5 text-xs font-medium rounded transition flex items-center gap-1.5 @(currentLang == "en" ? "bg-[#5C1D24] text-[#FCFBFA]" : "text-[#735A5A] hover:text-[#2D2424]")">
-                    🇬🇧 English
-                    @if (!string.IsNullOrWhiteSpace(homeModel.MainTitleEn))
+                    @if (currentLang == "en")
                     {
-                        <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                        <span class="w-2 h-2 rounded-full bg-green-500 shrink-0"></span>
                     }
+                    🇬🇧 English
                 </button>
                 <button type="button" 
                         @onclick='() => currentLang = "de"'
                         class="px-3 py-1.5 text-xs font-medium rounded transition flex items-center gap-1.5 @(currentLang == "de" ? "bg-[#5C1D24] text-[#FCFBFA]" : "text-[#735A5A] hover:text-[#2D2424]")">
-                    🇩🇪 German
-                    @if (!string.IsNullOrWhiteSpace(homeModel.MainTitleDe))
+                    @if (currentLang == "de")
                     {
-                        <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                        <span class="w-2 h-2 rounded-full bg-green-500 shrink-0"></span>
                     }
+                    🇩🇪 German
                 </button>
             </div>
 
             <button @onclick="HandleSave" 
-                    disabled="@isLoading"
-                    class="bg-[#5C1D24] hover:bg-[#4A171D] text-[#FCFBFA] px-6 py-2.5 text-xs uppercase font-medium rounded-md transition cursor-pointer disabled:opacity-50">
-                @if (isLoading) { <span>Saving...</span> } else { <span>Save Changes</span> }
+                    disabled="@(isLoading || isUploading)"
+                    class="bg-[#5C1D24] hover:bg-[#4A171D] text-[#FCFBFA] px-6 py-2.5 text-xs uppercase font-medium rounded-md transition cursor-pointer disabled:opacity-50 flex items-center gap-2">
+                @if (isLoading) 
+                { 
+                    <svg class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>Saving...</span> 
+                } 
+                else 
+                { 
+                    <span>Save Changes</span> 
+                }
             </button>
         </div>
     </div>
 
     <!-- Edit Form Card Container -->
-    <div class="bg-[#FCFBFA] border border-[#E6E0DD] rounded-lg p-8 shadow-sm relative overflow-hidden">
+    <div class="bg-[#FCFBFA] border border-[#E6E0DD] rounded-lg p-8 shadow-sm relative overflow-hidden space-y-6">
         
         <!-- Loading Overlay -->
-        @if (isLoading)
+        @if (isPageLoading)
         {
             <div class="absolute inset-0 bg-[#FCFBFA]/90 backdrop-blur-[2px] z-50 flex flex-col items-center justify-center space-y-3">
                 <div class="w-8 h-8 border-3 border-[#E6E0DD] border-t-[#5C1D24] rounded-full animate-spin"></div>
                 <span class="text-xs font-medium uppercase text-[#5C1D24] tracking-wider">
-                    Updating content...
+                    Loading home content...
                 </span>
             </div>
         }
 
-        <EditForm Model="homeModel" OnValidSubmit="HandleSave">
-            <div class="space-y-6">
-                
-                <!-- Reminder Banner -->
-                <div class="bg-[#5C1D24]/10 border border-[#5C1D24]/20 p-3 rounded-md text-xs text-[#5C1D24] font-medium flex justify-between items-center">
-                    <span>You are editing: <strong class="uppercase">@(currentLang == "en" ? "English (EN)" : "German (DE)")</strong>. Remember to check both tabs before saving!</span>
-                    <button type="button" @onclick="SwitchLanguage" class="underline font-bold hover:opacity-80 cursor-pointer">
-                        Switch to @(currentLang == "en" ? "German 🇩🇪" : "English 🇬🇧") ➔
-                    </button>
+        <!-- Language Reminder Banner -->
+        <div class="bg-[#5C1D24]/10 border border-[#5C1D24]/20 p-3 rounded-md text-xs text-[#5C1D24] font-medium flex justify-between items-center">
+            <span>You are editing: <strong class="uppercase">@(currentLang == "en" ? "English (EN)" : "German (DE)")</strong>. Remember to check both language tabs before saving!</span>
+            <button type="button" @onclick="SwitchLanguage" class="underline font-bold hover:opacity-80 cursor-pointer">
+                Switch to @(currentLang == "en" ? "German 🇩🇪" : "English 🇬🇧") ➔
+            </button>
+        </div>
+
+        <!-- Hero Media (Image / Video) Upload & Preview Section -->
+        <div class="border border-[#E6E0DD] rounded-md p-5 bg-white space-y-4">
+            <h3 class="text-xs uppercase font-semibold text-[#5C1D24] tracking-normal border-b border-[#E6E0DD] pb-2">
+                Hero Background Media (Image or Video)
+            </h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                <div>
+                    <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-2">
+                        Upload Media File (Image / MP4 Video)
+                    </label>
+                    <div class="flex items-center gap-3">
+                        <InputFile OnChange="HandleFileSelected" accept="image/*,video/mp4"
+                                   class="block w-full text-xs text-gray-500 file:mr-3 file:py-2 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-[#5C1D24] file:text-white hover:file:bg-[#4A171D] cursor-pointer border border-[#D9D0CC] rounded" />
+                        @if (isUploading)
+                        {
+                            <svg class="animate-spin h-5 w-5 text-[#5C1D24]" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        }
+                    </div>
+                    @if (!string.IsNullOrEmpty(selectedFileName))
+                    {
+                        <span class="text-[10px] text-emerald-700 font-medium mt-1 block">Selected: @selectedFileName</span>
+                    }
                 </div>
 
-                <!-- Main Title -->
+                <!-- Preview Box -->
+                <div>
+                    <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-2">
+                        Media Preview
+                    </label>
+                    <div class="w-full h-40 rounded-md border border-[#D9D0CC] bg-[#F5EFEE] overflow-hidden flex items-center justify-center relative">
+                        @if (!string.IsNullOrEmpty(previewMediaUrl))
+                        {
+                            @if (homeModel.MediaType == "video")
+                            {
+                                <video src="@previewMediaUrl" controls class="w-full h-full object-cover"></video>
+                            }
+                            else
+                            {
+                                <img src="@previewMediaUrl" alt="Hero Preview" class="w-full h-full object-cover" />
+                            }
+                        }
+                        else
+                        {
+                            <span class="text-xs text-gray-400">No media uploaded</span>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <EditForm Model="homeModel" OnValidSubmit="HandleSave">
+            <div class="space-y-6">
+
+                <!-- Main Title Input -->
                 <div>
                     <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-2 tracking-normal">
                         Main Title (@(currentLang.ToUpper()))
@@ -110,19 +161,19 @@
                     }
                 </div>
 
-                <!-- Description Paragraph 1 -->
+                <!-- Description Paragraph Input -->
                 <div>
                     <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-2 tracking-normal">
                         Description Paragraph 1 (@(currentLang.ToUpper()))
                     </label>
                     @if (currentLang == "en")
                     {
-                        <InputTextArea @bind-Value="homeModel.Description1En" rows="3"
+                        <InputTextArea @bind-Value="homeModel.Description1En" rows="4"
                                        class="w-full bg-white border border-[#D9D0CC] px-3.5 py-3 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
                     }
                     else
                     {
-                        <InputTextArea @bind-Value="homeModel.Description1De" rows="3"
+                        <InputTextArea @bind-Value="homeModel.Description1De" rows="4"
                                        class="w-full bg-white border border-[#D9D0CC] px-3.5 py-3 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
                     }
                 </div>
@@ -135,18 +186,117 @@
 
 @code {
     private string currentLang = "en";
+    private bool isPageLoading = true;
     private bool isLoading = false;
-    private bool showNotification = false;
-    private string notificationMessage = "";
-    private string notificationType = "success";
+    private bool isUploading = false;
 
-    private HomeSectionModel homeModel = new()
+    private string previewMediaUrl = string.Empty;
+    private string selectedFileName = string.Empty;
+    private const string BucketName = "gmbh";
+
+    private string? toastMessage;
+    private ToastNotification.ToastType toastType = ToastNotification.ToastType.Success;
+
+    private HomeSectionDto homeModel = new();
+
+    protected override async Task OnInitializedAsync()
     {
-        MainTitleEn = "Connecting Germany and Myanmar Through Business, Trade, and Innovation",
-        MainTitleDe = "Deutschland und Myanmar durch Wirtschaft, Handel und Innovation verbinden",
-        Description1En = "Irrawaddy GmbH is a Munich-based company dedicated to creating business opportunities between Germany and Myanmar.",
-        Description1De = "Die Irrawaddy GmbH ist ein in München ansässiges Unternehmen..."
-    };
+        await LoadHomeContentAsync();
+    }
+
+    private async Task LoadHomeContentAsync()
+    {
+        try
+        {
+            isPageLoading = true;
+            var response = await Http.GetFromJsonAsync<HomeSectionDto>("api/cms/home");
+            if (response != null)
+            {
+                homeModel = response;
+                if (!string.IsNullOrEmpty(homeModel.HeroMediaUrl))
+                {
+                    previewMediaUrl = homeModel.HeroMediaUrl.StartsWith("http")
+                        ? homeModel.HeroMediaUrl
+                        : await GetImageUrlAsync(BucketName, homeModel.HeroMediaUrl);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowToast($"Failed to load home section: {ex.Message}", ToastNotification.ToastType.Error);
+        }
+        finally
+        {
+            isPageLoading = false;
+        }
+    }
+
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file == null) return;
+
+        selectedFileName = file.Name;
+        homeModel.MediaType = file.ContentType.Contains("video") ? "video" : "image";
+
+        try
+        {
+            isUploading = true;
+            StateHasChanged();
+
+            const long maxFileSize = 100 * 1024 * 1024; // 100 MB max for video/images
+
+            using var fileStream = file.OpenReadStream(maxFileSize);
+            using var memoryStream = new MemoryStream();
+            await fileStream.CopyToAsync(memoryStream);
+            memoryStream.Position = 0;
+
+            using var content = new MultipartFormDataContent();
+            var streamContent = new StreamContent(memoryStream);
+            streamContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+
+            content.Add(streamContent, "file", file.Name);
+
+            var response = await Http.PostAsync($"api/cms/media/upload?bucketName={BucketName}", content);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var uploadResult = await response.Content.ReadFromJsonAsync<FileUploadResponseModel>();
+                if (uploadResult != null && !string.IsNullOrEmpty(uploadResult.FileName))
+                {
+                    homeModel.HeroMediaUrl = uploadResult.FileName;
+                    previewMediaUrl = await GetImageUrlAsync(BucketName, uploadResult.FileName);
+                    ShowToast("Media uploaded successfully!", ToastNotification.ToastType.Success);
+                }
+            }
+            else
+            {
+                ShowToast($"Upload failed: {response.StatusCode}", ToastNotification.ToastType.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowToast($"Upload error: {ex.Message}", ToastNotification.ToastType.Error);
+        }
+        finally
+        {
+            isUploading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task<string> GetImageUrlAsync(string bucketName, string key)
+    {
+        try
+        {
+            var response = await Http.GetFromJsonAsync<PresignedUrlResponseModel>($"api/cms/media/presigned-url?bucketName={bucketName}&key={key}");
+            return response?.PresignedUrl ?? string.Empty;
+        }
+        catch
+        {
+            return string.Empty;
+        }
+    }
 
     private void SwitchLanguage()
     {
@@ -155,43 +305,65 @@
 
     private async Task HandleSave()
     {
-        isLoading = true;
-        showNotification = false;
-        StateHasChanged();
-
         try
         {
-            await Task.Delay(1000); 
+            isLoading = true;
+            StateHasChanged();
 
-            notificationMessage = "Changes saved successfully to the database!";
-            notificationType = "success";
-            showNotification = true;
+            var response = await Http.PutAsJsonAsync("api/cms/home", homeModel);
+
+            if (response.IsSuccessStatusCode)
+            {
+                ShowToast("Home section updated successfully!", ToastNotification.ToastType.Success);
+            }
+            else
+            {
+                ShowToast("Failed to save changes. Please try again.", ToastNotification.ToastType.Error);
+            }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            notificationMessage = "Failed to save changes. Please try again.";
-            notificationType = "error";
-            showNotification = true;
+            ShowToast($"Error: {ex.Message}", ToastNotification.ToastType.Error);
         }
         finally
         {
             isLoading = false;
             StateHasChanged();
-
-            _ = Task.Run(async () =>
-            {
-                await Task.Delay(4000);
-                showNotification = false;
-                await InvokeAsync(StateHasChanged);
-            });
         }
     }
 
-    public class HomeSectionModel
+    private void DismissToast() => toastMessage = null;
+
+    private void ShowToast(string message, ToastNotification.ToastType type)
     {
-        public string MainTitleEn { get; set; } = "";
-        public string Description1En { get; set; } = "";
-        public string MainTitleDe { get; set; } = "";
-        public string Description1De { get; set; } = "";
+        toastMessage = message;
+        toastType = type;
+        StateHasChanged();
+        _ = Task.Run(async () =>
+        {
+            await Task.Delay(3000);
+            toastMessage = null;
+            await InvokeAsync(StateHasChanged);
+        });
+    }
+
+    public class HomeSectionDto
+    {
+        public string MainTitleEn { get; set; } = string.Empty;
+        public string Description1En { get; set; } = string.Empty;
+        public string MainTitleDe { get; set; } = string.Empty;
+        public string Description1De { get; set; } = string.Empty;
+        public string HeroMediaUrl { get; set; } = string.Empty;
+        public string MediaType { get; set; } = "image";
+    }
+
+    public class FileUploadResponseModel
+    {
+        public string FileName { get; set; } = string.Empty;
+    }
+
+    public class PresignedUrlResponseModel
+    {
+        public string PresignedUrl { get; set; } = string.Empty;
     }
 }

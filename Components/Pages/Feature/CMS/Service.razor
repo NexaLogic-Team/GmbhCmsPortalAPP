@@ -1,40 +1,14 @@
 @page "/cms/edit-services"
-@using GmbhCmsPortalApp.Components.Shared
 @layout MainLayout
 @attribute [Authorize]
 @inject HttpClient Http
 @inject AuthenticationStateProvider AuthStateProvider
 @inject NavigationManager Navigation
+@using GmbhCmsPortalApp.Components.Common
+@using GmbhCmsPortalApp.Components.Shared
 
 <!-- Notification Toast System -->
-@if (toastMessage != null)
-{
-    <div
-        class="fixed top-6 right-6 z-[9999] flex items-center gap-3 px-4 py-3 rounded-lg shadow-md border text-xs font-medium transition-all duration-300 animate-fade-in bg-white border-[#E6E0DD] text-[#2D2424]">
-        @if (toastType == ToastType.Success)
-        {
-            <div class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
-                </svg>
-            </div>
-        }
-        else
-        {
-            <div class="w-6 h-6 rounded-full bg-rose-100 text-rose-800 flex items-center justify-center shrink-0">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
-                </svg>
-            </div>
-        }
-        <span class="text-[#2D2424] font-medium tracking-wide">@toastMessage</span>
-        <button @onclick="DismissToast" class="ml-3 text-[#735A5A] hover:text-[#2D2424] transition cursor-pointer">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-            </svg>
-        </button>
-    </div>
-}
+<ToastNotification Message="@toastMessage" Type="@toastType" OnDismiss="DismissToast" />
 
 <div class="max-w-5xl mx-auto space-y-8">
 
@@ -44,10 +18,8 @@
             <button @onclick="GoBack"
                     class="bg-white border border-[#D9D0CC] hover:bg-[#F5EFEE] text-[#5C1D24] p-2 rounded-md transition cursor-pointer flex items-center justify-center"
                     title="Back">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                     stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                 </svg>
             </button>
             <div>
@@ -61,23 +33,28 @@
         </div>
 
         <div class="flex items-center gap-3">
-            <!-- Reusable Language Switcher Component -->
-            <LanguageSwitcher @bind-CurrentLanguage="currentLang"
+            <LanguageSwitcher @bind-CurrentLanguage="CurrentLang"
                               HasEnglishData="@hasEnglishServices"
-                              HasGermanData="@hasGermanServices"/>
+                              HasGermanData="@hasGermanServices" />
 
-            <!-- Add New Service Button -->
             <button @onclick="OpenCreateModal"
                     class="bg-[#5C1D24] hover:bg-[#4A171D] text-[#FCFBFA] px-5 py-2.5 text-xs uppercase font-medium rounded-md transition cursor-pointer flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-                     stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                 </svg>
                 Add New Service
             </button>
         </div>
     </div>
 
+    <!-- Language Reminder Banner -->
+    <div class="bg-[#5C1D24]/10 border border-[#5C1D24]/20 p-3 rounded-md text-xs text-[#5C1D24] font-medium flex justify-between items-center">
+        <span>You are editing: <strong class="uppercase">@(currentLang == "en" ? "English (EN)" : "German (DE)")</strong>. Remember to check both language tabs before saving!</span>
+        <button type="button" @onclick="SwitchLanguage" class="underline font-bold hover:opacity-80 cursor-pointer">
+            Switch to @(currentLang == "en" ? "German 🇩🇪" : "English 🇬🇧") ➔
+        </button>
+    </div>
+    
     <!-- Section Header Settings Card -->
     <div class="bg-[#FCFBFA] border border-[#E6E0DD] rounded-lg p-6 shadow-sm space-y-4">
         <div class="flex items-center justify-between border-b border-[#E6E0DD] pb-2">
@@ -94,10 +71,8 @@
                 @if (isSavingHeader)
                 {
                     <svg class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-                                stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor"
-                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
                     <span>Saving...</span>
                 }
@@ -114,14 +89,14 @@
                     Subtitle (@currentLang.ToUpper())
                 </label>
                 <input type="text" @bind="sectionSubtitle"
-                       class="w-full bg-white border border-[#D9D0CC] px-3.5 py-2.5 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
+                       class="w-full bg-white border border-[#D9D0CC] px-3.5 py-2.5 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md" />
             </div>
             <div>
                 <label class="block text-xs uppercase font-medium text-[#5C4D4D] mb-2 tracking-normal">
                     Main Title (@currentLang.ToUpper())
                 </label>
                 <input type="text" @bind="sectionTitle"
-                       class="w-full bg-white border border-[#D9D0CC] px-3.5 py-2.5 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md"/>
+                       class="w-full bg-white border border-[#D9D0CC] px-3.5 py-2.5 text-sm text-[#2D2424] focus:outline-none focus:border-[#5C1D24] rounded-md" />
             </div>
         </div>
     </div>
@@ -136,13 +111,10 @@
 
         @if (isPageLoading)
         {
-            <div
-                class="flex flex-col items-center justify-center py-12 space-y-3 bg-[#FCFBFA] border border-[#E6E0DD] rounded-lg">
-                <svg class="animate-spin h-8 w-8 text-[#5C1D24]" xmlns="http://www.w3.org/2000/svg" fill="none"
-                     viewBox="0 0 24 24">
+            <div class="flex flex-col items-center justify-center py-12 space-y-3 bg-[#FCFBFA] border border-[#E6E0DD] rounded-lg">
+                <svg class="animate-spin h-8 w-8 text-[#5C1D24]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
                 <span class="text-xs font-medium text-[#5C4D4D]">Loading services (@currentLang)...</span>
             </div>
@@ -158,15 +130,12 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 @foreach (var service in servicesList)
                 {
-                    <div
-                        class="bg-[#FCFBFA] border border-[#E6E0DD] rounded-lg overflow-hidden shadow-sm flex flex-col justify-between">
+                    <div class="bg-[#FCFBFA] border border-[#E6E0DD] rounded-lg overflow-hidden shadow-sm flex flex-col justify-between">
                         <div>
-                            <div
-                                class="h-40 bg-gray-50 border-b border-[#E6E0DD] relative flex items-center justify-center overflow-hidden">
+                            <div class="h-40 bg-gray-50 border-b border-[#E6E0DD] relative flex items-center justify-center overflow-hidden">
                                 @if (!string.IsNullOrEmpty(service.ImageUrl))
                                 {
-                                    <img src="@service.ImageUrl" alt="@service.Title"
-                                         class="w-full h-full object-cover"/>
+                                    <img src="@service.ImageUrl" alt="@service.Title" class="w-full h-full object-cover" />
                                 }
                                 else
                                 {
@@ -174,12 +143,8 @@
                                 }
                             </div>
                             <div class="p-5 space-y-2">
-                                <h4 class="text-base font-bold text-[#2D2424]">
-                                    @service.Title
-                                </h4>
-                                <p class="text-xs text-[#5C4D4D] line-clamp-3">
-                                    @service.Description
-                                </p>
+                                <h4 class="text-base font-bold text-[#2D2424]">@service.Title</h4>
+                                <p class="text-xs text-[#5C4D4D] line-clamp-3">@service.Description</p>
                             </div>
                         </div>
 
@@ -201,39 +166,13 @@
 
 </div>
 
-<!-- Delete Confirmation Modal -->
-@if (isDeleteModalOpen && serviceToDelete != null)
-{
-    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-        <div
-            class="bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden border border-[#E6E0DD] p-6 space-y-4">
-            <h3 class="text-sm font-semibold uppercase text-red-700">Confirm Delete</h3>
-            <p class="text-xs text-[#5C4D4D]">
-                Are you sure you want to delete <span class="font-bold text-[#2D2424]">@serviceToDelete.Title</span>?
-                This action cannot be undone.
-            </p>
-            <div class="flex justify-end gap-2 pt-2">
-                <button @onclick="CloseDeleteModal" type="button"
-                        class="px-4 py-2 text-xs font-medium text-[#5C4D4D] border border-[#D9D0CC] rounded hover:bg-[#F5EFEE] cursor-pointer">
-                    Cancel
-                </button>
-                <button @onclick="ExecuteDelete" disabled="@isDeleting" type="button"
-                        class="px-4 py-2 text-xs font-medium text-white bg-red-700 hover:bg-red-800 rounded disabled:opacity-50 flex items-center gap-2 cursor-pointer">
-                    @if (isDeleting)
-                    {
-                        <svg class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-                                    stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor"
-                                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                    }
-                    <span>Delete Service</span>
-                </button>
-            </div>
-        </div>
-    </div>
-}
+<!-- Delete Confirmation Modal Component -->
+<DeleteConfirmationModal IsOpen="@isDeleteModalOpen"
+                         ItemName="@(serviceToDelete?.Title ?? string.Empty)"
+                         ButtonText="Delete Service"
+                         IsDeleting="@isDeleting"
+                         OnCancel="CloseDeleteModal"
+                         OnConfirm="ExecuteDelete" />
 
 <!-- Dual Language Create/Edit Modal -->
 @if (isModalOpen)
@@ -247,7 +186,7 @@
                 </h3>
                 <button @onclick="CloseModal" class="text-gray-400 hover:text-gray-600 cursor-pointer">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
             </div>
@@ -260,15 +199,13 @@
                     <div class="flex items-center gap-3">
                         <div class="relative flex-1">
                             <InputFile OnChange="HandleFileSelected" accept="image/*"
-                                       class="block w-full text-xs text-gray-500 file:mr-3 file:py-2 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-[#5C1D24] file:text-white hover:file:bg-[#4A171D] cursor-pointer border border-[#D9D0CC] rounded"/>
+                                       class="block w-full text-xs text-gray-500 file:mr-3 file:py-2 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-[#5C1D24] file:text-white hover:file:bg-[#4A171D] cursor-pointer border border-[#D9D0CC] rounded" />
                         </div>
                         @if (isUploading)
                         {
                             <svg class="animate-spin h-5 w-5 text-[#5C1D24]" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-                                        stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor"
-                                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
                         }
                     </div>
@@ -276,55 +213,13 @@
                     @if (!string.IsNullOrEmpty(previewImageUrl))
                     {
                         <div class="mt-3 flex items-center gap-3">
-                            <img src="@previewImageUrl" alt="Preview"
-                                 class="w-16 h-16 object-cover rounded border border-[#E6E0DD]"/>
-                            <span
-                                class="text-[10px] text-emerald-700 font-medium truncate">Attached: @selectedFileName</span>
+                            <img src="@previewImageUrl" alt="Preview" class="w-16 h-16 object-cover rounded border border-[#E6E0DD]" />
+                            <span class="text-[10px] text-emerald-700 font-medium truncate">Attached: @selectedFileName</span>
                         </div>
                     }
                 </div>
 
-                <hr class="border-[#E6E0DD]"/>
-
-                @* <!-- English Form Section --> *@
-                @* @if (!isEditMode || currentLang == "en") *@
-                @* { *@
-                @*     <div class="space-y-3 bg-[#FCFBFA] p-4 rounded-md border border-[#E6E0DD]"> *@
-                @*         <h4 class="font-bold text-[#5C1D24] uppercase text-[11px] flex items-center gap-2"> *@
-                @*             🇬🇧 English Details *@
-                @*         </h4> *@
-                @*         <div> *@
-                @*             <label class="block uppercase font-medium text-[#5C4D4D] mb-1">Service Title (EN) *</label> *@
-                @*             <input type="text" @bind="createModel.TitleEn" placeholder="e.g. Consulting" *@
-                @*                    class="w-full bg-white border border-[#D9D0CC] px-3 py-2 text-sm rounded focus:outline-none focus:border-[#5C1D24]"/> *@
-                @*         </div> *@
-                @*         <div> *@
-                @*             <label class="block uppercase font-medium text-[#5C4D4D] mb-1">Description (EN)</label> *@
-                @*             <textarea @bind="createModel.DescriptionEn" rows="3" placeholder="English description..." *@
-                @*                       class="w-full bg-white border border-[#D9D0CC] px-3 py-2 text-sm rounded focus:outline-none focus:border-[#5C1D24]"></textarea> *@
-                @*         </div> *@
-                @*     </div> *@
-                @* } *@
-                @* *@
-                @* <!-- German Form Section --> *@
-                @* @if (!isEditMode || currentLang == "de") *@
-                @* { *@
-                @*     <div class="space-y-3 bg-[#FCFBFA] p-4 rounded-md border border-[#E6E0DD]"> *@
-                @*         <h4 class="font-bold text-[#5C1D24] uppercase text-[11px] flex items-center gap-2"> *@
-                @*             🇩🇪 German Details *@
-                @*         </h4> *@
-                @*         <div> *@
-                @*             <label class="block uppercase font-medium text-[#5C4D4D] mb-1">Service Title (DE) *</label> *@
-                @*             <input type="text" @bind="createModel.TitleDe" placeholder="e.g. Beratung" *@
-                @*                    class="w-full bg-white border border-[#D9D0CC] px-3 py-2 text-sm rounded focus:outline-none focus:border-[#5C1D24]"/> *@
-                @*         </div> *@
-                @*         <div> *@
-                @*             <label class="block uppercase font-medium text-[#5C4D4D] mb-1">Description (DE)</label> *@
-                @*             <textarea @bind="createModel.DescriptionDe" rows="3" placeholder="German description..." *@
-                @*                       class="w-full bg-white border border-[#D9D0CC] px-3 py-2 text-sm rounded focus:outline-none focus:border-[#5C1D24]"></textarea> *@
-                @*         </div> *@
-                @*     </div> *@
-                @* } *@
+                <hr class="border-[#E6E0DD]" />
 
                 <!-- English Form Section -->
                 @if (!isEditMode || currentLang == "en")
@@ -336,7 +231,7 @@
                         <div>
                             <label class="block uppercase font-medium text-[#5C4D4D] mb-1">Service Title (EN) *</label>
                             <input type="text" @bind="createModel.TitleEn" placeholder="e.g. Consulting"
-                                   class="w-full bg-white border border-[#D9D0CC] px-3 py-2 text-sm rounded focus:outline-none focus:border-[#5C1D24]"/>
+                                   class="w-full bg-white border border-[#D9D0CC] px-3 py-2 text-sm rounded focus:outline-none focus:border-[#5C1D24]" />
                         </div>
                         <div>
                             <label class="block uppercase font-medium text-[#5C4D4D] mb-1">Description (EN)</label>
@@ -356,7 +251,7 @@
                         <div>
                             <label class="block uppercase font-medium text-[#5C4D4D] mb-1">Service Title (DE) *</label>
                             <input type="text" @bind="createModel.TitleDe" placeholder="e.g. Beratung"
-                                   class="w-full bg-white border border-[#D9D0CC] px-3 py-2 text-sm rounded focus:outline-none focus:border-[#5C1D24]"/>
+                                   class="w-full bg-white border border-[#D9D0CC] px-3 py-2 text-sm rounded focus:outline-none focus:border-[#5C1D24]" />
                         </div>
                         <div>
                             <label class="block uppercase font-medium text-[#5C4D4D] mb-1">Description (DE)</label>
@@ -364,7 +259,6 @@
                                       class="w-full bg-white border border-[#D9D0CC] px-3 py-2 text-sm rounded focus:outline-none focus:border-[#5C1D24]"></textarea>
                         </div>
                     </div>
-                }
                 }
 
                 <div class="px-6 py-3 bg-[#FCFBFA] border-t border-[#E6E0DD] flex justify-end gap-2">
@@ -377,10 +271,8 @@
                         @if (isSaving)
                         {
                             <svg class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-                                        stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor"
-                                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
                         }
                         <span>Save Service</span>
@@ -392,68 +284,57 @@
 }
 
 @code {
-    private string _currentLang = "en";
+    private string currentLang = "en";
 
-    private string currentLang
+    public string CurrentLang
     {
-        get => _currentLang;
+        get => currentLang;
         set
         {
-            if (_currentLang != value)
+            if (currentLang != value)
             {
-                _currentLang = value;
+                currentLang = value;
                 _ = LoadDataForCurrentLangAsync();
             }
         }
     }
 
-    private string sectionSubtitle = "";
-    private string sectionTitle = "";
+    private string sectionSubtitle = string.Empty;
+    private string sectionTitle = string.Empty;
 
     private List<ApiServiceItem> servicesList = new();
 
-    private bool hasEnglishServices = false;
-    private bool hasGermanServices = false;
+    private bool hasEnglishServices;
+    private bool hasGermanServices;
 
     private bool isPageLoading = true;
-    private bool isSaving = false;
-    private bool isDeleting = false;
-    private bool isUploading = false;
-    private bool isSavingHeader = false;
+    private bool isSaving;
+    private bool isDeleting;
+    private bool isUploading;
+    private bool isSavingHeader;
 
-    private bool isModalOpen = false;
-    private bool isEditMode = false;
+    private bool isModalOpen;
+    private bool isEditMode;
     private ApiServiceItem activeService = new();
 
-    private string previewImageUrl = "";
-    private string selectedFileName = "";
-    private string initialImageUrl = "";
+    private string previewImageUrl = string.Empty;
+    private string selectedFileName = string.Empty;
+    private string initialImageUrl = string.Empty;
 
-    private bool isDeleteModalOpen = false;
-    private ApiServiceItem? serviceToDelete = null;
+    private bool isDeleteModalOpen;
+    private ApiServiceItem? serviceToDelete;
 
-    private string? toastMessage = null;
-    private ToastType toastType = ToastType.Success;
+    private string? toastMessage;
+    private ToastNotification.ToastType toastType = ToastNotification.ToastType.Success;
 
-    private const string BucketName = "gmbh"; // S3 / Cloudflare R2 Bucket Name
-
+    private const string BucketName = "gmbh";
     private CreateServiceDto createModel = new();
-
-    public enum ToastType
-    {
-        Success,
-        Error
-    }
 
     protected override async Task OnInitializedAsync()
     {
-        Console.WriteLine("[LOG-UI] Initializing Service Component...");
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-        var user = authState.User;
-
-        if (user.Identity is null || !user.Identity.IsAuthenticated)
+        if (authState.User.Identity is null || !authState.User.Identity.IsAuthenticated)
         {
-            Console.WriteLine("[LOG-UI] User not authenticated. Redirecting...");
             Navigation.NavigateTo("/");
             return;
         }
@@ -511,8 +392,6 @@
         try
         {
             isSavingHeader = true;
-            Console.WriteLine($"[LOG-UI] Saving Header Settings for lang: {currentLang}");
-
             var request = new UpdateHeaderRequest
             {
                 Subtitle = sectionSubtitle,
@@ -522,17 +401,16 @@
             var response = await Http.PutAsJsonAsync($"api/cms/services/header?lang={currentLang}", request);
             if (response.IsSuccessStatusCode)
             {
-                ShowToast("Header settings updated successfully!", ToastType.Success);
+                ShowToast("Header settings updated successfully!", ToastNotification.ToastType.Success);
             }
             else
             {
-                ShowToast("Failed to update header settings.", ToastType.Error);
+                ShowToast("Failed to update header settings.", ToastNotification.ToastType.Error);
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[LOG-UI-ERROR] SaveHeaderSettings Exception: {ex.Message}");
-            ShowToast($"Save Error: {ex.Message}", ToastType.Error);
+            ShowToast($"Save Error: {ex.Message}", ToastNotification.ToastType.Error);
         }
         finally
         {
@@ -544,7 +422,6 @@
     {
         try
         {
-            Console.WriteLine($"[LOG-UI] Fetching Services for lang: {currentLang}");
             var response = await Http.GetFromJsonAsync<List<ApiServiceItem>>($"api/cms/services?lang={currentLang}");
             servicesList.Clear();
             if (response != null)
@@ -555,7 +432,6 @@
                     {
                         service.ImageUrl = await GetImageUrlAsync(BucketName, service.ImageUrl);
                     }
-
                     servicesList.Add(service);
                 }
             }
@@ -571,7 +447,6 @@
 
     private void OpenCreateModal()
     {
-        Console.WriteLine("[LOG-UI] Opening Create Service Modal...");
         isEditMode = false;
         createModel = new CreateServiceDto();
         initialImageUrl = string.Empty;
@@ -582,7 +457,6 @@
 
     private async Task OpenEditModal(ApiServiceItem service)
     {
-        Console.WriteLine($"[LOG-UI] Opening Edit Modal for Service ID: {service.Id}");
         isEditMode = true;
         activeService = service;
         previewImageUrl = string.Empty;
@@ -623,28 +497,22 @@
         {
             await DeleteUploadedImageAsync(createModel.ImageUrl);
         }
-
         isModalOpen = false;
     }
 
     private async Task HandleFileSelected(InputFileChangeEventArgs e)
     {
         var file = e.File;
-        if (file == null)
-        {
-            Console.WriteLine("[LOG-UI-WARN] File selection cancelled or null.");
-            return;
-        }
+        if (file == null) return;
 
         selectedFileName = file.Name;
-        Console.WriteLine($"[LOG-UI] Selected File: {file.Name}, Size: {file.Size} bytes, Type: {file.ContentType}");
 
         try
         {
             isUploading = true;
             StateHasChanged();
 
-            var maxFileSize = 40 * 1024 * 1024; // 40 MB
+            const long maxFileSize = 40 * 1024 * 1024; // 40 MB
 
             using var fileStream = file.OpenReadStream(maxFileSize);
             using var memoryStream = new MemoryStream();
@@ -654,21 +522,13 @@
             using var content = new MultipartFormDataContent();
             var streamContent = new StreamContent(memoryStream);
             streamContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
-
             content.Add(streamContent, "file", file.Name);
 
-            var uploadUrl = $"api/cms/media/upload?bucketName={BucketName}";
-            Console.WriteLine($"[LOG-UI] Posting file to: {uploadUrl}");
-
-            var response = await Http.PostAsync(uploadUrl, content);
-
-            Console.WriteLine($"[LOG-UI] Upload Http Status: {response.StatusCode}");
+            var response = await Http.PostAsync($"api/cms/media/upload?bucketName={BucketName}", content);
 
             if (response.IsSuccessStatusCode)
             {
                 var uploadResult = await response.Content.ReadFromJsonAsync<FileUploadResponseModel>();
-                Console.WriteLine($"[LOG-UI] Upload Response Received -> Key: '{uploadResult?.FileName}'");
-
                 if (uploadResult != null && !string.IsNullOrEmpty(uploadResult.FileName))
                 {
                     if (!string.IsNullOrEmpty(createModel.ImageUrl) && createModel.ImageUrl != initialImageUrl)
@@ -677,25 +537,18 @@
                     }
 
                     createModel.ImageUrl = uploadResult.FileName;
-
-                    Console.WriteLine($"[LOG-UI] Requesting Presigned URL for Preview Key: '{uploadResult.FileName}'");
                     previewImageUrl = await GetImageUrlAsync(BucketName, uploadResult.FileName);
-                    Console.WriteLine($"[LOG-UI] Preview URL set: {previewImageUrl}");
-
-                    ShowToast("Image uploaded successfully!", ToastType.Success);
+                    ShowToast("Image uploaded successfully!", ToastNotification.ToastType.Success);
                 }
             }
             else
             {
-                var errBody = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"[LOG-UI-ERROR] Upload Failed: {errBody}");
-                ShowToast($"Upload failed: {response.StatusCode}", ToastType.Error);
+                ShowToast($"Upload failed: {response.StatusCode}", ToastNotification.ToastType.Error);
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[LOG-UI-ERROR] HandleFileSelected Exception: {ex.Message}");
-            ShowToast($"Upload error: {ex.Message}", ToastType.Error);
+            ShowToast($"Upload error: {ex.Message}", ToastNotification.ToastType.Error);
         }
         finally
         {
@@ -706,23 +559,18 @@
 
     private async Task SaveService()
     {
-        Console.WriteLine($"[LOG-UI] Saving Service... ImageKey: '{createModel.ImageUrl}'");
-
-        // Title ကွက်လပ် ဖြစ်နေပါက အစတည်းက API မခေါ်ဘဲ Toast ပြမည်
         if (string.IsNullOrWhiteSpace(createModel.TitleEn) && string.IsNullOrWhiteSpace(createModel.TitleDe))
         {
-            ShowToast("Please enter Service Title.", ToastType.Error);
+            ShowToast("Please enter Service Title.", ToastNotification.ToastType.Error);
             return;
         }
 
         try
         {
             isSaving = true;
-            HttpResponseMessage response = isEditMode
+            var response = isEditMode
                 ? await Http.PutAsJsonAsync($"api/cms/services/{activeService.Id}", createModel)
                 : await Http.PostAsJsonAsync("api/cms/services", createModel);
-
-            Console.WriteLine($"[LOG-UI] Save Service Http Status: {response.StatusCode}");
 
             if (response.IsSuccessStatusCode)
             {
@@ -730,19 +578,16 @@
                 await LoadDataForCurrentLangAsync();
                 await CheckLanguageDataAvailabilityAsync();
                 isModalOpen = false;
-                ShowToast(isEditMode ? "Service updated successfully!" : "Service created successfully!", ToastType.Success);
+                ShowToast(isEditMode ? "Service updated successfully!" : "Service created successfully!", ToastNotification.ToastType.Success);
             }
             else
             {
-                var err = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"[LOG-UI-ERROR] Save Service Failed Status Code: {response.StatusCode}, Details: {err}");
-                ShowToast($"Failed to save service details. ({response.StatusCode})", ToastType.Error);
+                ShowToast($"Failed to save service details. ({response.StatusCode})", ToastNotification.ToastType.Error);
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[LOG-UI-ERROR] SaveService Exception: {ex.Message}");
-            ShowToast($"Save error: {ex.Message}", ToastType.Error);
+            ShowToast($"Save error: {ex.Message}", ToastNotification.ToastType.Error);
         }
         finally
         {
@@ -761,6 +606,11 @@
         isDeleteModalOpen = false;
         serviceToDelete = null;
     }
+    
+    private void SwitchLanguage()
+    {
+        currentLang = currentLang == "en" ? "de" : "en";
+    }
 
     private async Task ExecuteDelete()
     {
@@ -772,19 +622,18 @@
             var response = await Http.DeleteAsync($"api/cms/services/{serviceToDelete.Id}");
             if (response.IsSuccessStatusCode)
             {
-                ShowToast("Service deleted successfully!", ToastType.Success);
+                ShowToast("Service deleted successfully!", ToastNotification.ToastType.Success);
                 await LoadDataForCurrentLangAsync();
                 await CheckLanguageDataAvailabilityAsync();
             }
             else
             {
-                ShowToast("Failed to delete service.", ToastType.Error);
+                ShowToast("Failed to delete service.", ToastNotification.ToastType.Error);
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[LOG-UI-ERROR] Delete Exception: {ex.Message}");
-            ShowToast($"Delete Error: {ex.Message}", ToastType.Error);
+            ShowToast($"Delete Error: {ex.Message}", ToastNotification.ToastType.Error);
         }
         finally
         {
@@ -799,9 +648,7 @@
 
         try
         {
-            var deleteUrl = $"api/cms/media/delete?bucketName={BucketName}&key={key}";
-            await Http.DeleteAsync(deleteUrl);
-            Console.WriteLine($"[LOG-UI] Deleted temp uploaded file from R2: {key}");
+            await Http.DeleteAsync($"api/cms/media/delete?bucketName={BucketName}&key={key}");
         }
         catch (Exception ex)
         {
@@ -813,9 +660,7 @@
     {
         try
         {
-            var url = $"api/cms/media/presigned-url?bucketName={bucketName}&key={key}";
-            Console.WriteLine($"[LOG-UI] GetImageUrlAsync calling: {url}");
-            var response = await Http.GetFromJsonAsync<PresignedUrlResponseModel>(url);
+            var response = await Http.GetFromJsonAsync<PresignedUrlResponseModel>($"api/cms/media/presigned-url?bucketName={bucketName}&key={key}");
             return response?.PresignedUrl ?? string.Empty;
         }
         catch (Exception ex)
@@ -829,7 +674,7 @@
 
     private void DismissToast() => toastMessage = null;
 
-    private void ShowToast(string message, ToastType type)
+    private void ShowToast(string message, ToastNotification.ToastType type)
     {
         toastMessage = message;
         toastType = type;
@@ -842,7 +687,6 @@
         });
     }
 
-    // Models mapped with API
     public class ApiServiceItem
     {
         public int Id { get; set; }
@@ -882,5 +726,4 @@
     {
         public string PresignedUrl { get; set; } = string.Empty;
     }
-
 }

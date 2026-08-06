@@ -1,5 +1,4 @@
 using System.Net.Http.Headers;
-using Microsoft.JSInterop;
 
 namespace GmbhCmsPortalApp.Components.Service;
 
